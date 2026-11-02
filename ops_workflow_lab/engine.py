@@ -3,6 +3,7 @@
 import json
 import re
 import uuid
+from collections.abc import Callable
 
 from .planner import Conflict, InvalidRequest, digest, plan
 from .provider import SyntheticProvider, TemporaryToolError, ToolProvider, VerificationError
@@ -13,9 +14,15 @@ MAX_ATTEMPTS = 3
 
 
 class Engine:
-    def __init__(self, store: Store, provider: ToolProvider | None = None):
+    def __init__(
+        self,
+        store: Store,
+        provider: ToolProvider | None = None,
+        planner: Callable[[str, str], dict] = plan,
+    ):
         self.store = store
         self.provider = provider or SyntheticProvider()
+        self.planner = planner
 
     def create(self, goal: str, failure: str, request_key: str) -> dict:
         if not isinstance(goal, str) or not 1 <= len(goal) <= 180:
@@ -24,8 +31,18 @@ class Engine:
             raise InvalidRequest(
                 "Idempotency-Key must be 8–128 letters, digits, underscores or dashes."
             )
-        proposal = plan(goal, failure)
         fingerprint = digest({"goal": goal, "failure": failure})
+        # Return persisted retries without running inference again. Never hold the DB
+        # write lock during a model request; the insertion transaction rechecks the key.
+        with self.store.transaction() as db:
+            existing = db.execute(
+                "SELECT * FROM runs WHERE request_key=?", (request_key,)
+            ).fetchone()
+            if existing:
+                if existing["fingerprint"] != fingerprint:
+                    raise Conflict("This idempotency key is already bound to a different request.")
+                return self.store.snapshot(db, existing["id"])
+        proposal = self.planner(goal, failure)
         with self.store.transaction() as db:
             existing = db.execute(
                 "SELECT * FROM runs WHERE request_key=?", (request_key,)
@@ -48,9 +65,19 @@ class Engine:
                 db,
                 run_id,
                 "plan_created",
-                message="Validated deterministic plan.",
+                message="Validated model intent; server built the execution plan."
+                if proposal.get("interpretation")
+                else "Validated deterministic plan.",
                 plan_hash=proposal["hash"],
             )
+            if proposal.get("interpretation"):
+                self.store.event(
+                    db,
+                    run_id,
+                    "model_interpreted",
+                    message="Local model classified the request.",
+                    **proposal["interpretation"],
+                )
             self.store.event(
                 db,
                 run_id,

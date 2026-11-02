@@ -1,14 +1,16 @@
 # Ops Workflow Lab
 
-[한국어](docs/README.ko.md) · [Architecture](docs/architecture.md) · [Design decisions](docs/design-decisions.md) · [Public-release scope](docs/public-release.md)
+[한국어](docs/README.ko.md) · [Local LLM & evaluation](docs/local-llm.md) · [Architecture](docs/architecture.md) · [Design decisions](docs/design-decisions.md) · [Public-release scope](docs/public-release.md)
 
 A runnable operations-agent portfolio demo: review a plan, approve simulated changes, and follow every execution step in a durable event timeline.
 
-**All infrastructure and results are synthetic.** The planner uses a small, explicit command grammar, not an LLM. No API key, cloud account, or external service is needed at runtime.
+**All infrastructure and operation results are synthetic.** Choose the deterministic command grammar or an optional **real local Ollama model** that interprets Korean/English requests. Model intent is validated before server-owned steps are built; simulated changes still require human approval. No cloud credentials are needed.
 
 > Independent demonstration implementation. No company source code, product API contracts, internal runbooks, credentials, customer data, or original Git history are included.
 
-![Workflow studio showing an approval-gated plan](docs/workflow-studio.png)
+![Local Qwen interpretation followed by an approved simulated backup with retry](docs/ollama-demo.png)
+
+Shown: optional Ollama mode after an approved run. The default rule-mode [approval screen](docs/workflow-studio.png) is also available without model weights.
 
 ## Run locally
 
@@ -24,6 +26,17 @@ uv run ops-lab
 Open **http://127.0.0.1:8765**. The server binds to loopback. Run state is stored in the ignored `.data/lab.db` file and survives restarts. Dependencies are downloaded during setup; the running demo does not need internet access.
 
 For a separate workspace: `uv run ops-lab --port 8766 --db .data/second.db`.
+
+### Use your local Ollama model
+
+```sh
+ollama list
+uv run ops-lab --planner ollama --model qwen3.8:27b-ctx32k
+```
+
+The example is a locally installed model tag used for this demo's evaluation; replace it with an exact name from your own `ollama list`. Ollama must already be running with the model installed. The application does not download models or fall back to rules when inference fails.
+
+Try **“atlas-api 서버를 백업해 두고 싶어. 계획을 만들어줘.”** The UI displays the model, structured interpretation, latency, and execution trace. The local model classifies intent; it does not generate executable code, choose arbitrary tools, or approve changes. [Setup, evaluation evidence, and limitations](docs/local-llm.md).
 
 ## Try a two-minute walkthrough
 
@@ -41,7 +54,7 @@ For a separate workspace: `uv run ops-lab --port 8766 --db .data/second.db`.
 | `atlas-api 백업해줘` | Korean equivalent of the backup request |
 | `lumen-db 복구 리허설해줘` | Korean equivalent of the rehearsal request |
 
-Targets are `atlas-api`, `lumen-db`, and `cedar-worker`. The planner intentionally rejects unknown targets, ambiguous phrasing, and compound commands instead of guessing.
+Targets are `atlas-api`, `lumen-db`, and `cedar-worker`. Rule mode accepts explicit example commands. LLM mode accepts varied phrasing but still supports only one named target and one operation; unknown or ambiguous requests should be rejected. See the live evaluation for the measured limits of that behavior.
 
 ## What this demonstrates
 
@@ -51,6 +64,7 @@ Targets are `atlas-api`, `lumen-db`, and `cedar-worker`. The planner intentional
 - **Bounded failure handling:** transient errors retry up to three total attempts; integrity failures stop immediately.
 - **Restart and replay:** completed steps are preserved, queued work resumes, and SSE reconnects use persisted event sequence numbers.
 - **MCP interface:** a real stdio server exposes synthetic inventory, proposal, status, and event tools. It does not expose an approval tool.
+- **Local model integration:** Ollama JSON-schema output, strict response validation, target grounding, explicit timeout/error behavior, and opt-in live evaluation on synthetic requests.
 
 ## Architecture at a glance
 
@@ -60,6 +74,7 @@ flowchart LR
     HOST[MCP host] --> MCP[Official SDK / stdio]
     API --> ENGINE[Plan and approval engine]
     MCP --> ENGINE
+    ENGINE -. optional intent classification .-> LLM[Local Ollama]
     ENGINE --> DB[(SQLite state and events)]
     WORKER[Local worker] --> ENGINE
     ENGINE --> SIM[Synthetic provider]
@@ -86,6 +101,8 @@ Keep the UI server running. Configure a stdio client using the same checkout and
 
 The placeholder path must point to your checkout. If the UI uses a custom database, set the same absolute `OPS_LAB_DB` environment variable in both processes. Available tools: `list_demo_targets`, `propose_workflow`, `get_workflow`, `get_workflow_events`. Refresh the UI's recent-runs list to review a proposal created by an MCP host. Human decisions are made in the local UI/API.
 
+MCP defaults to rule mode independently of the web process. To use local inference there too, add `OPS_LAB_PLANNER=ollama` and `OPS_LAB_MODEL=<your installed tag>` to the MCP server's environment.
+
 The dependency is deliberately constrained to the supported MCP SDK 1.x API, with an exact resolution in `uv.lock`. [Official SDK documentation](https://py.sdk.modelcontextprotocol.io/v1/).
 
 ## Validate
@@ -105,7 +122,7 @@ The local [API reference](http://127.0.0.1:8765/docs) and [OpenAPI schema](http:
 
 This is an independently implemented **portfolio demonstration**, not an anonymized production release or a performance benchmark. It contains no actual backup, recovery, cloud provisioning, or product-specific implementation. The read-only inventory and verification outputs are simulated too.
 
-The request interpreter is deterministic; there is no trained classifier, RAG corpus, or LLM integration. The application is local and single-user, with no authentication or multi-tenant authorization. Its approval gate demonstrates a workflow invariant; it does not authenticate the human making the HTTP request. Do not expose it as a public service without adding those controls.
+The optional LLM is an intent classifier over a fixed capability set, not an autonomous research or multi-step planning agent. There is no RAG corpus, semantic tool retrieval, or multi-target graph in this release. The application is local and single-user, with no authentication or multi-tenant authorization. Its approval gate demonstrates a workflow invariant; it does not authenticate the human making the HTTP request. Do not expose it as a public service without adding those controls.
 
 SQLite serializes the demo's immediate tool operations. The atomicity guarantees apply to these in-process simulations, not to real remote infrastructure. External adapters would need remote idempotency, leases, timeouts, and reconciliation. See the [design tradeoffs](docs/design-decisions.md).
 

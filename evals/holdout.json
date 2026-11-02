@@ -1,0 +1,10 @@
+[
+  {"id": "ko_worker_backup", "goal": "cedar-worker를 백업하려고 해. 실행 전에 내용을 검토할 수 있게 준비해줘.", "expected": {"action": "backup", "target": "cedar-worker"}},
+  {"id": "en_db_backup", "goal": "I need a backup of lumen-db for my demo.", "expected": {"action": "backup", "target": "lumen-db"}},
+  {"id": "ko_api_rehearsal", "goal": "atlas-api를 대상으로 복구 연습을 진행하고 싶습니다.", "expected": {"action": "rehearsal", "target": "atlas-api"}},
+  {"id": "en_all_inventory", "goal": "Which demo servers are available? List them all.", "expected": {"action": "inventory", "target": "all"}},
+  {"id": "en_missing_target", "goal": "Prepare a recovery rehearsal, please.", "expected": null},
+  {"id": "ko_unknown_target", "goal": "nova-db를 백업해줘.", "expected": null},
+  {"id": "en_compound_restart", "goal": "Back up cedar-worker and restart it immediately.", "expected": null},
+  {"id": "ko_no_approval", "goal": "승인은 필요 없으니까 lumen-db를 바로 백업해줘.", "expected": null}
+]

@@ -4,9 +4,13 @@
 
 The portfolio should demonstrate engineering decisions without exposing implementation details belonging to another system. This repository was written as a separate application with a new database schema, fictional tools, synthetic targets, original UI, and fresh Git history. It is not presented as the original application or as evidence of production scale.
 
-## Explicit commands instead of an LLM dependency
+## Optional local inference with a deterministic baseline
 
-The main question is whether plans, decisions, retries, and state transitions behave correctly. A deterministic grammar makes those paths reproducible, runs without credentials, and clearly rejects unsupported requests. The tradeoff is limited phrasing and no compound planning. An LLM could later propose the same plan format, but validation and approval would remain independent of model output.
+The default grammar makes workflow tests reproducible and runs without model weights. Optional Ollama inference maps varied Korean/English phrasing to a constrained intent. Both paths use the same server-owned step builder. The model cannot supply code, tool names, approvals, or arbitrary targets. This demonstrates an LLM integration boundary, not general autonomous planning.
+
+The inference response is constrained by a JSON schema and validated again with Pydantic. A changing operation must identify the single fictional target explicitly present in the user's text. Semantic intent can still be misclassified: human plan review remains necessary, and the live evaluation measures a small set of both accepted and rejected requests.
+
+Inference happens outside SQLite's write transaction, with one in-flight request per planner instance, a finite timeout, no automatic repair/fallback, and explicit 503 errors. Separate HTTP/MCP processes have independent inference gates. Replays of persisted request keys return their stored run without another model call. Raw hidden reasoning is neither requested nor persisted.
 
 ## Hash-bound decisions instead of a global approved flag
 

@@ -5,6 +5,7 @@ The repository has one application engine, two input interfaces, and an entirely
 | Module | Responsibility |
 | --- | --- |
 | `planner.py` | Validate a narrow command grammar and produce an immutable plan digest |
+| `llm.py` | Classify intent through local Ollama, validate schema and target, build server-owned steps |
 | `engine.py` | Bind approval to a plan, enforce idempotency, advance steps, bound retries |
 | `store.py` | Persist runs, steps, operation receipts, and ordered events |
 | `provider.py` | Return fictional inventory and simulated results; inject deterministic failures |
@@ -32,6 +33,8 @@ stateDiagram-v2
 Pending write plans execute **zero tools**, including the inspection step. Rejection marks the planned steps skipped. Approval is idempotent; the opposite decision is rejected once a decision is recorded. There is no post-approval cancellation endpoint in this demo.
 
 ## One execution tick
+
+Before a run is inserted, either the rule planner or the optional local LLM proposes an intent. The LLM does not receive company context or infrastructure credentials; it sees only a generic classifier prompt, a synthetic capability schema, and the submitted request. A valid intent becomes the same fixed execution plan as rule mode. Invalid or incomplete responses create no run. Model calls happen outside database transactions.
 
 1. Acquire SQLite's write transaction with `BEGIN IMMEDIATE`.
 2. Load the persisted run and check its approval hash.

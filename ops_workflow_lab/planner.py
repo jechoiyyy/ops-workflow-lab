@@ -24,6 +24,10 @@ class NotFound(ValueError):
     pass
 
 
+class PlannerUnavailable(ValueError):
+    pass
+
+
 def digest(value: object) -> str:
     return hashlib.sha256(
         json.dumps(value, sort_keys=True, ensure_ascii=False).encode()
@@ -56,9 +60,20 @@ def plan(goal: str, failure: str = "none") -> dict:
             )
         action, parsed = match
         target = parsed.group(1)
+    return build_plan(action, target, failure)
+
+
+def build_plan(action: str, target: str, failure: str = "none") -> dict:
+    """Server-owned tool selection; callers can never supply arbitrary steps."""
+    if action not in {"inventory", "backup", "rehearsal"} or failure not in FAILURES:
+        raise InvalidRequest("Unsupported action or failure scenario.")
     if action == "inventory":
+        if target != "all" or failure != "none":
+            raise InvalidRequest("Inventory requires target=all and failure=none.")
         steps = [{"tool": "inventory", "title": "Read synthetic inventory", "effect": "read"}]
     else:
+        if target not in {item["id"] for item in TARGETS}:
+            raise InvalidRequest("Unknown synthetic target.")
         steps = [
             {"tool": "inspect", "title": "Inspect synthetic target", "effect": "read"},
             {

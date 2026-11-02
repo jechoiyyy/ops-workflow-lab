@@ -14,8 +14,8 @@ ALLOWED_ROOT = {
     ".gitignore",
     ".python-version",
 }
-ALLOWED_DIRS = {"ops_workflow_lab", "tests", "docs", "scripts", ".github"}
-ALLOWED_SUFFIXES = {".py", ".html", ".css", ".js", ".md", ".png", ".yml"}
+ALLOWED_DIRS = {"ops_workflow_lab", "tests", "docs", "scripts", ".github", "evals"}
+ALLOWED_SUFFIXES = {".py", ".html", ".css", ".js", ".md", ".png", ".yml", ".json"}
 PATTERNS = {
     "private-network address": re.compile(
         r"\b(?:10(?:\.\d{1,3}){3}|192\.168(?:\.\d{1,3}){2}|"

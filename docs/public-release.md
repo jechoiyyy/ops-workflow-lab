@@ -4,7 +4,8 @@ This is an independently authored demonstration of generic workflow patterns. It
 
 ## Included
 
-- A new deterministic planner and approval/execution state machine.
+- A new deterministic planner, optional local Ollama intent classifier, and approval/execution state machine.
+- Original synthetic evaluation requests and measured local inference reports; no private data is sent to the model by these evaluations.
 - A newly defined SQLite schema and transactional event log.
 - Fictional inventory and synthetic failure scenarios.
 - A new browser UI and local API.

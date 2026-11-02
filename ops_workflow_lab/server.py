@@ -16,7 +16,8 @@ from pydantic import BaseModel, ConfigDict, Field
 from starlette.middleware.trustedhost import TrustedHostMiddleware
 
 from .engine import TERMINAL, Engine
-from .planner import TARGETS, Conflict, InvalidRequest, NotFound
+from .llm import OllamaPlanner
+from .planner import TARGETS, Conflict, InvalidRequest, NotFound, PlannerUnavailable
 from .store import Store
 
 ASSETS = Path(__file__).parent / "static"
@@ -35,9 +36,13 @@ class DecisionInput(BaseModel):
     decision: str
 
 
-def create_app(db_path: str | None = None, tick_interval: float = 0.65) -> FastAPI:
+def create_app(
+    db_path: str | None = None,
+    tick_interval: float = 0.65,
+    planner: OllamaPlanner | None = None,
+) -> FastAPI:
     store = Store(db_path or os.environ.get("OPS_LAB_DB", ".data/lab.db"))
-    engine = Engine(store)
+    engine = Engine(store, planner=planner) if planner else Engine(store)
 
     async def work():
         while True:
@@ -95,14 +100,21 @@ def create_app(db_path: str | None = None, tick_interval: float = 0.65) -> FastA
 
     async def domain_error(request, exc):
         status = 404 if isinstance(exc, NotFound) else 409 if isinstance(exc, Conflict) else 400
+        if isinstance(exc, PlannerUnavailable):
+            status = 503
         return JSONResponse({"detail": str(exc)}, status_code=status)
 
-    for error in (InvalidRequest, Conflict, NotFound):
+    for error in (InvalidRequest, Conflict, NotFound, PlannerUnavailable):
         app.add_exception_handler(error, domain_error)
 
     @app.get("/api/health")
     def health():
-        return {"status": "ok", "mode": "synthetic", "planner": "deterministic"}
+        return {
+            "status": "ok",
+            "mode": "synthetic",
+            "planner": "ollama" if planner else "deterministic",
+            "model": planner.model if planner else None,
+        }
 
     @app.get("/api/targets")
     def targets():
@@ -180,8 +192,18 @@ def main():
     parser = argparse.ArgumentParser(description="Run the local synthetic operations lab.")
     parser.add_argument("--port", type=int, default=8765)
     parser.add_argument("--db", default=os.environ.get("OPS_LAB_DB", ".data/lab.db"))
+    parser.add_argument("--planner", choices=["deterministic", "ollama"], default="deterministic")
+    parser.add_argument("--model", default=os.environ.get("OPS_LAB_MODEL", ""))
+    parser.add_argument("--ollama-url", default="http://127.0.0.1:11434")
     args = parser.parse_args()
-    uvicorn.run(create_app(args.db), host="127.0.0.1", port=args.port, access_log=False)
+    if args.planner == "ollama" and not args.model:
+        parser.error(
+            "--model is required with --planner ollama; use an installed local model name."
+        )
+    planner = OllamaPlanner(args.model, args.ollama_url) if args.planner == "ollama" else None
+    uvicorn.run(
+        create_app(args.db, planner=planner), host="127.0.0.1", port=args.port, access_log=False
+    )
 
 
 if __name__ == "__main__":

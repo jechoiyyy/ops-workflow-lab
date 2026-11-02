@@ -61,7 +61,8 @@
           <div>
             <span class="metric-icon">⌘</span
             ><span
-              >Deterministic planner<small
+              ><span id="planner-label">Deterministic planner</span
+              ><small id="planner-description"
                 >Explicit commands, predictable plans</small
               ></span
             >
@@ -90,7 +91,7 @@
                 <span class="section-index">01</span>
                 <h2>Compose a request</h2>
               </div>
-              <span class="tag">RULE-BASED</span>
+              <span class="tag" id="planner-tag">RULE-BASED</span>
             </div>
             <form id="request-form">
               <label for="goal">What would you like to do?</label>
@@ -127,7 +128,7 @@ Back up atlas-api</textarea
               <button class="primary" type="submit" id="create">
                 Build execution plan <span>→</span>
               </button>
-              <p class="form-note">
+              <p class="form-note" id="planner-help">
                 Supports the example commands above and their Korean
                 equivalents. No LLM or cloud calls.
               </p>
@@ -169,6 +170,7 @@ Back up atlas-api</textarea
                 </div>
               </div>
               <p id="run-scenario" class="form-note"></p>
+              <p id="run-model" class="form-note" hidden></p>
               <ol id="steps" class="steps"></ol>
               <div id="approval" class="approval" hidden>
                 <div class="approval-title">◇ Your review is required</div>

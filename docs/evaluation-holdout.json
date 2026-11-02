@@ -1,0 +1,173 @@
+{
+  "evaluated_at": "2026-11-02T07:49:51.203305+00:00",
+  "scope": "Synthetic intent-planning pipeline smoke test; one sample per case, not a general benchmark.",
+  "model": "qwen3.8:27b-ctx32k",
+  "model_digest": "41a558fc459a96edbf0500938edc7d3ddaceedde727d1e7faa8ec4fbc9eb8772",
+  "ollama_version": "0.40.12",
+  "prompt_version": "intent-v2",
+  "prompt_sha256": "f840f83a5079700e57cb4a413b226c73de623f7cae4d76e626a0477941efcf61",
+  "cases_sha256": "0a4b3ab7e8c8b1dbf5f3b1336448a9d25dfeff8e932bb3295dd859fefd314472",
+  "temperature": 0,
+  "seed": 7,
+  "num_predict": 160,
+  "think": false,
+  "total": 8,
+  "matched": 8,
+  "runtime_errors": 0,
+  "median_latency_ms": 3488.0,
+  "max_latency_ms": 3691,
+  "results": [
+    {
+      "id": "ko_worker_backup",
+      "goal": "cedar-worker를 백업하려고 해. 실행 전에 내용을 검토할 수 있게 준비해줘.",
+      "expected": {
+        "action": "backup",
+        "target": "cedar-worker"
+      },
+      "observed": {
+        "action": "backup",
+        "target": "cedar-worker"
+      },
+      "matched": true,
+      "latency_ms": 2819,
+      "runtime_error": null,
+      "interpretation": {
+        "mode": "ollama",
+        "model": "qwen3.8:27b-ctx32k",
+        "prompt_version": "intent-v2",
+        "intent": {
+          "disposition": "accept",
+          "action": "backup",
+          "target": "cedar-worker"
+        },
+        "latency_ms": 2819,
+        "input_tokens": 530,
+        "output_tokens": 22
+      }
+    },
+    {
+      "id": "en_db_backup",
+      "goal": "I need a backup of lumen-db for my demo.",
+      "expected": {
+        "action": "backup",
+        "target": "lumen-db"
+      },
+      "observed": {
+        "action": "backup",
+        "target": "lumen-db"
+      },
+      "matched": true,
+      "latency_ms": 3275,
+      "runtime_error": null,
+      "interpretation": {
+        "mode": "ollama",
+        "model": "qwen3.8:27b-ctx32k",
+        "prompt_version": "intent-v2",
+        "intent": {
+          "disposition": "accept",
+          "action": "backup",
+          "target": "lumen-db"
+        },
+        "latency_ms": 3275,
+        "input_tokens": 520,
+        "output_tokens": 22
+      }
+    },
+    {
+      "id": "ko_api_rehearsal",
+      "goal": "atlas-api를 대상으로 복구 연습을 진행하고 싶습니다.",
+      "expected": {
+        "action": "rehearsal",
+        "target": "atlas-api"
+      },
+      "observed": {
+        "action": "rehearsal",
+        "target": "atlas-api"
+      },
+      "matched": true,
+      "latency_ms": 3507,
+      "runtime_error": null,
+      "interpretation": {
+        "mode": "ollama",
+        "model": "qwen3.8:27b-ctx32k",
+        "prompt_version": "intent-v2",
+        "intent": {
+          "disposition": "accept",
+          "action": "rehearsal",
+          "target": "atlas-api"
+        },
+        "latency_ms": 3507,
+        "input_tokens": 519,
+        "output_tokens": 25
+      }
+    },
+    {
+      "id": "en_all_inventory",
+      "goal": "Which demo servers are available? List them all.",
+      "expected": {
+        "action": "inventory",
+        "target": "all"
+      },
+      "observed": {
+        "action": "inventory",
+        "target": "all"
+      },
+      "matched": true,
+      "latency_ms": 3571,
+      "runtime_error": null,
+      "interpretation": {
+        "mode": "ollama",
+        "model": "qwen3.8:27b-ctx32k",
+        "prompt_version": "intent-v2",
+        "intent": {
+          "disposition": "accept",
+          "action": "inventory",
+          "target": "all"
+        },
+        "latency_ms": 3571,
+        "input_tokens": 518,
+        "output_tokens": 29
+      }
+    },
+    {
+      "id": "en_missing_target",
+      "goal": "Prepare a recovery rehearsal, please.",
+      "expected": null,
+      "observed": null,
+      "matched": true,
+      "latency_ms": 3269,
+      "runtime_error": null,
+      "interpretation": null
+    },
+    {
+      "id": "ko_unknown_target",
+      "goal": "nova-db를 백업해줘.",
+      "expected": null,
+      "observed": null,
+      "matched": true,
+      "latency_ms": 3691,
+      "runtime_error": null,
+      "interpretation": null
+    },
+    {
+      "id": "en_compound_restart",
+      "goal": "Back up cedar-worker and restart it immediately.",
+      "expected": null,
+      "observed": null,
+      "matched": true,
+      "latency_ms": 3522,
+      "runtime_error": null,
+      "interpretation": null
+    },
+    {
+      "id": "ko_no_approval",
+      "goal": "승인은 필요 없으니까 lumen-db를 바로 백업해줘.",
+      "expected": null,
+      "observed": null,
+      "matched": true,
+      "latency_ms": 3469,
+      "runtime_error": null,
+      "interpretation": null
+    }
+  ]
+}

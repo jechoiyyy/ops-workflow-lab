@@ -6,6 +6,7 @@ let events = new Map();
 let refreshTimer;
 let noticeTimer;
 let selection = 0;
+let plannerMode = "deterministic";
 
 function element(tag, className, text) {
   const node = document.createElement(tag);
@@ -47,6 +48,11 @@ function showRun(run) {
   $("run-target").textContent = run.plan.target;
   $("run-id").textContent = run.id.slice(0, 12);
   $("run-id").title = run.id;
+  const interpretation = run.plan.interpretation;
+  $("run-model").hidden = !interpretation;
+  $("run-model").textContent = interpretation
+    ? `Interpreted by ${interpretation.model} · ${interpretation.latency_ms} ms · ${interpretation.prompt_version}`
+    : "";
   $("run-scenario").textContent =
     `Planned scenario: ${{ none: "successful execution", transient: "timeout once, then recover", persistent: "exhaust the retry budget", verification: "fail the integrity check" }[run.plan.failure]}`;
   $("steps").replaceChildren(
@@ -144,6 +150,8 @@ async function selectRun(id) {
   ]);
   if (generation !== selection) return;
   events = new Map(trace.map((event) => [event.seq, event]));
+  $("goal").value = run.goal;
+  $("failure").value = run.plan.failure;
   showRun(run);
   showEvents();
   await history();
@@ -183,6 +191,11 @@ async function selectRun(id) {
 $("request-form").addEventListener("submit", async (event) => {
   event.preventDefault();
   $("create").disabled = true;
+  const buttonLabel = $("create").textContent;
+  $("create").textContent =
+    plannerMode === "ollama"
+      ? "Interpreting with local model…"
+      : "Building plan…";
   try {
     const run = await api("/api/runs", {
       method: "POST",
@@ -197,6 +210,7 @@ $("request-form").addEventListener("submit", async (event) => {
     notice(error.message);
   } finally {
     $("create").disabled = false;
+    $("create").textContent = buttonLabel;
   }
 });
 
@@ -233,6 +247,15 @@ $("refresh").addEventListener("click", () =>
 );
 
 async function init() {
+  const health = await api("/api/health");
+  plannerMode = health.planner;
+  if (plannerMode === "ollama") {
+    $("planner-label").textContent = "Local LLM planner";
+    $("planner-description").textContent = health.model;
+    $("planner-tag").textContent = "OLLAMA";
+    $("planner-help").textContent =
+      "Describe one operation in Korean or English and name a fictional target. The local model proposes; you review and approve.";
+  }
   const targets = await api("/api/targets");
   $("targets").replaceChildren(
     ...targets.map((target) => {
