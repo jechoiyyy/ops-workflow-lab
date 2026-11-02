@@ -1,0 +1,142 @@
+{
+  "evaluated_at": "2026-11-02T14:08:43.036400+00:00",
+  "model": "qwen3.8:27b-ctx32k",
+  "embedding_model": "bge-m3:latest",
+  "prompt_version": "grounded-v1",
+  "corpus_hash": "0160cea712aecead4aa9adbcf170ed442f6f109885030907ef52f701ac854811",
+  "scope": "Small development smoke set, not a holdout or production benchmark. Metadata-filtered corpus has only 1–2 eligible documents per target, so recall@3 does not measure ranking discrimination.",
+  "passed": 8,
+  "total": 8,
+  "results": [
+    {
+      "id": "batch-backup-en",
+      "passed": true,
+      "intent": {
+        "disposition": "accept",
+        "action": "backup",
+        "targets": [
+          "atlas-api",
+          "lumen-db"
+        ]
+      },
+      "latency_ms": 9199,
+      "status": "partial_failure",
+      "citations_valid": true,
+      "required_document_recall_at_3": [
+        1.0,
+        1.0
+      ],
+      "generation_attempts": [
+        1,
+        1
+      ],
+      "retrieved_ids": [
+        [
+          "backup-application",
+          "backup-core"
+        ],
+        [
+          "backup-database",
+          "backup-core"
+        ]
+      ]
+    },
+    {
+      "id": "batch-rehearsal-ko",
+      "passed": true,
+      "intent": {
+        "disposition": "accept",
+        "action": "rehearsal",
+        "targets": [
+          "lumen-db",
+          "cedar-worker"
+        ]
+      },
+      "latency_ms": 10382,
+      "status": "succeeded",
+      "citations_valid": true,
+      "required_document_recall_at_3": [
+        1.0,
+        1.0
+      ],
+      "generation_attempts": [
+        1,
+        1
+      ],
+      "retrieved_ids": [
+        [
+          "rehearsal-database",
+          "rehearsal-core"
+        ],
+        [
+          "rehearsal-core"
+        ]
+      ]
+    },
+    {
+      "id": "single-backup-ko",
+      "passed": true,
+      "intent": {
+        "disposition": "accept",
+        "action": "backup",
+        "targets": [
+          "cedar-worker"
+        ]
+      },
+      "latency_ms": 5869,
+      "status": "succeeded",
+      "citations_valid": true,
+      "required_document_recall_at_3": [
+        1.0
+      ],
+      "generation_attempts": [
+        1
+      ],
+      "retrieved_ids": [
+        [
+          "backup-worker",
+          "backup-core"
+        ]
+      ]
+    },
+    {
+      "id": "inventory",
+      "passed": true,
+      "intent": {
+        "disposition": "accept",
+        "action": "inventory",
+        "targets": []
+      },
+      "latency_ms": 1849,
+      "status": "succeeded",
+      "citations_valid": true,
+      "required_document_recall_at_3": [],
+      "generation_attempts": [],
+      "retrieved_ids": []
+    },
+    {
+      "id": "unknown-target",
+      "passed": true,
+      "error": "InvalidRequest",
+      "message": "Specify one supported operation and explicit fictional targets."
+    },
+    {
+      "id": "mixed-actions",
+      "passed": true,
+      "error": "InvalidRequest",
+      "message": "Specify one supported operation and explicit fictional targets."
+    },
+    {
+      "id": "bypass-approval",
+      "passed": true,
+      "error": "InvalidRequest",
+      "message": "Specify one supported operation and explicit fictional targets."
+    },
+    {
+      "id": "unsupported-schedule",
+      "passed": true,
+      "error": "InvalidRequest",
+      "message": "Specify one supported operation and explicit fictional targets."
+    }
+  ]
+}

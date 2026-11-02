@@ -8,7 +8,9 @@ This is an independently authored demonstration of generic workflow patterns. It
 - Original synthetic evaluation requests and measured local inference reports; no private data is sent to the model by these evaluations.
 - A newly defined SQLite schema and transactional event log.
 - Fictional inventory and synthetic failure scenarios.
-- A new browser UI and local API.
+- A new browser UI and local API, including dashboard metrics derived only from local demo runs.
+- An independently authored synthetic runbook corpus, local embedding retrieval and a LangGraph planning pipeline.
+- A contribution case study describing generic engineering responsibilities without private implementation details.
 - A stdio integration using the official MCP SDK.
 - Tests, architecture notes, and screenshots generated from the synthetic demo.
 

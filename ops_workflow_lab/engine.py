@@ -5,11 +5,12 @@ import re
 import uuid
 from collections.abc import Callable
 
+from .dag import outcomes, specs
 from .planner import Conflict, InvalidRequest, digest, plan
 from .provider import SyntheticProvider, TemporaryToolError, ToolProvider, VerificationError
 from .store import Store, now
 
-TERMINAL = {"succeeded", "failed", "rejected"}
+TERMINAL = {"succeeded", "failed", "rejected", "partial_failure", "cancelled"}
 MAX_ATTEMPTS = 3
 
 
@@ -91,12 +92,30 @@ class Engine:
             return self.store.snapshot(db, run_id)
 
     def decide(self, run_id: str, plan_hash: str, decision: str) -> dict:
-        if decision not in {"approve", "reject"}:
-            raise InvalidRequest("Decision must be approve or reject.")
+        if decision not in {"approve", "reject", "cancel"}:
+            raise InvalidRequest("Decision must be approve, reject or cancel.")
         with self.store.transaction() as db:
             run = self.store.snapshot(db, run_id)
             if plan_hash != run["plan"]["hash"]:
                 raise Conflict("The decision does not match the displayed plan.")
+            if decision == "cancel":
+                if run["status"] == "cancelled":
+                    return run
+                if run["status"] in TERMINAL:
+                    raise Conflict("A completed run cannot be cancelled.")
+                db.execute("UPDATE runs SET status='cancelled' WHERE id=?", (run_id,))
+                db.execute(
+                    "UPDATE steps SET status='skipped' WHERE run_id=? "
+                    "AND status IN ('pending','retrying')",
+                    (run_id,),
+                )
+                self.store.event(
+                    db,
+                    run_id,
+                    "cancelled",
+                    message="Remaining work cancelled; completed receipts retained.",
+                )
+                return self.store.snapshot(db, run_id)
             if not run["plan"]["requires_approval"]:
                 raise Conflict("This read-only run does not require a decision.")
             if run["status"] != "awaiting_approval":
@@ -138,11 +157,53 @@ class Engine:
             if run["status"] == "queued":
                 db.execute("UPDATE runs SET status='running' WHERE id=?", (run_id,))
                 self.store.event(db, run_id, "running", message="Execution started.")
-            step = next((s for s in run["steps"] if s["status"] in {"pending", "retrying"}), None)
+            definition = specs(run)
+            states = {
+                spec["id"]: step["status"]
+                for spec, step in zip(definition, run["steps"], strict=True)
+            }
+            # Propagate failure along dependencies only. Other targets remain runnable.
+            for spec, item in zip(definition, run["steps"], strict=True):
+                if (
+                    item["status"] in {"pending", "retrying"}
+                    and spec["tool"] != "join"
+                    and any(states[dep] in {"failed", "skipped"} for dep in spec["depends_on"])
+                ):
+                    item["status"] = states[spec["id"]] = "skipped"
+                    db.execute(
+                        "UPDATE steps SET status='skipped' WHERE run_id=? AND position=?",
+                        (run_id, item["position"]),
+                    )
+                    self.store.event(
+                        db,
+                        run_id,
+                        "step_skipped",
+                        message="Dependency failed.",
+                        position=item["position"],
+                        target=spec["target"],
+                    )
+            step = next(
+                (
+                    item
+                    for spec, item in zip(definition, run["steps"], strict=True)
+                    if item["status"] in {"pending", "retrying"}
+                    and all(
+                        states[dep]
+                        in (
+                            {"succeeded", "failed", "skipped"}
+                            if spec["tool"] == "join"
+                            else {"succeeded"}
+                        )
+                        for dep in spec["depends_on"]
+                    )
+                ),
+                None,
+            )
             if step is None:
                 return self.store.snapshot(db, run_id)
             attempt = step["attempts"] + 1
             position = step["position"]
+            spec = definition[position]
             key = digest({"run": run_id, "position": position, "plan": proposal["hash"]})
             self.store.event(
                 db,
@@ -151,6 +212,7 @@ class Engine:
                 message=step["title"],
                 position=position,
                 attempt=attempt,
+                target=spec["target"],
             )
             db.execute(
                 "UPDATE steps SET attempts=? WHERE run_id=? AND position=?",
@@ -158,13 +220,24 @@ class Engine:
             )
             try:
                 receipt = db.execute("SELECT result FROM operations WHERE key=?", (key,)).fetchone()
-                result = (
-                    json.loads(receipt[0])
-                    if receipt
-                    else self.provider.call(
-                        step["tool"], proposal["target"], key, attempt, proposal["failure"]
-                    )
-                )
+                if receipt:
+                    result = json.loads(receipt[0])
+                elif step["tool"] == "apply_policy":
+                    result = {
+                        "synthetic": True,
+                        "target": spec["target"],
+                        "controls": spec["controls"],
+                    }
+                elif step["tool"] == "join":
+                    result = {"synthetic": True, "targets": outcomes(run)}
+                else:
+                    failure = proposal["failure"]
+                    if (
+                        proposal.get("version") == 2
+                        and spec["target"] != proposal["failure_target"]
+                    ):
+                        failure = "none"
+                    result = self.provider.call(step["tool"], spec["target"], key, attempt, failure)
             except TemporaryToolError as exc:
                 if attempt < MAX_ATTEMPTS:
                     db.execute(
@@ -201,9 +274,24 @@ class Engine:
                     result=result,
                 )
                 if position == len(run["steps"]) - 1:
-                    db.execute("UPDATE runs SET status='succeeded' WHERE id=?", (run_id,))
+                    status = "succeeded"
+                    if step["tool"] == "join":
+                        values = list(result["targets"].values())
+                        status = (
+                            "failed"
+                            if all(v == "failed" for v in values)
+                            else "partial_failure"
+                            if "failed" in values
+                            else "succeeded"
+                        )
+                    db.execute("UPDATE runs SET status=? WHERE id=?", (status, run_id))
                     self.store.event(
-                        db, run_id, "succeeded", message="All simulated checks passed."
+                        db,
+                        run_id,
+                        status,
+                        message="Target outcomes recorded."
+                        if step["tool"] == "join"
+                        else "All simulated checks passed.",
                     )
             return self.store.snapshot(db, run_id)
 
@@ -211,6 +299,17 @@ class Engine:
         db.execute(
             "UPDATE steps SET status='failed' WHERE run_id=? AND position=?", (run_id, position)
         )
+        run = self.store.snapshot(db, run_id)
+        if run["plan"].get("version") == 2:
+            self.store.event(
+                db,
+                run_id,
+                "branch_failed",
+                message=message,
+                position=position,
+                target=specs(run)[position]["target"],
+            )
+            return
         db.execute(
             "UPDATE steps SET status='skipped' WHERE run_id=? AND position>?", (run_id, position)
         )

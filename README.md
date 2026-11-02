@@ -1,16 +1,16 @@
 # Ops Workflow Lab
 
-[한국어](docs/README.ko.md) · [Local LLM & evaluation](docs/local-llm.md) · [Architecture](docs/architecture.md) · [Design decisions](docs/design-decisions.md) · [Public-release scope](docs/public-release.md)
+[한국어](docs/README.ko.md) · [My contribution & case study](docs/case-study.md) · [Grounded graph demo](docs/grounded-workflows.md) · [Local LLM & evaluation](docs/local-llm.md) · [Architecture](docs/architecture.md) · [Design decisions](docs/design-decisions.md) · [Public-release scope](docs/public-release.md)
 
 A runnable operations-agent portfolio demo: review a plan, approve simulated changes, and follow every execution step in a durable event timeline.
 
-**All infrastructure and operation results are synthetic.** Choose the deterministic command grammar or an optional **real local Ollama model** that interprets Korean/English requests. Model intent is validated before server-owned steps are built; simulated changes still require human approval. No cloud credentials are needed.
+**All infrastructure and operation results are synthetic.** Choose a deterministic baseline, local intent classification, or a **LangGraph RAG pipeline** using a real local Ollama LLM and embedding model. Model intent is validated before server-owned steps are built; simulated changes still require human approval. No cloud credentials are needed.
 
 > Independent demonstration implementation. No company source code, product API contracts, internal runbooks, credentials, customer data, or original Git history are included.
 
-![Local Qwen interpretation followed by an approved simulated backup with retry](docs/ollama-demo.png)
+![Grounded workflow dashboard with retrieved evidence and human approval](docs/rag-dashboard.png)
 
-Shown: optional Ollama mode after an approved run. The default rule-mode [approval screen](docs/workflow-studio.png) is also available without model weights.
+Shown: RAG mode with two fictional targets. The interface includes recent-run metrics, searchable status filters, cited evidence, execution inspection, theme switching and durable event replay. Earlier v0.1 screenshots remain as historical references.
 
 ## Run locally
 
@@ -38,6 +38,16 @@ The example is a locally installed model tag used for this demo's evaluation; re
 
 Try **“atlas-api 서버를 백업해 두고 싶어. 계획을 만들어줘.”** The UI displays the model, structured interpretation, latency, and execution trace. The local model classifies intent; it does not generate executable code, choose arbitrary tools, or approve changes. [Setup, evaluation evidence, and limitations](docs/local-llm.md).
 
+### Grounded multi-target workflow
+
+```sh
+uv run ops-lab --planner rag --model qwen3.8:27b-ctx32k --embedding-model bge-m3:latest
+```
+
+Both model tags must already be installed. Try **“Back up atlas-api and lumen-db”**, select **Exhaust the retry budget**, then build the plan. Open **Evidence** to review the retrieved synthetic runbooks and cited controls. Approve once: the first target exhausts its retry budget, the second completes, and the final join reports `partial_failure`. Cancel stops remaining work while retaining completed receipts.
+
+[Walkthrough, evaluation and limits](docs/grounded-workflows.md) · [Contribution narrative and reviewer guide](docs/case-study.md)
+
 ## Try a two-minute walkthrough
 
 1. Enter **Back up atlas-api** and select **Timeout once, then recover**.
@@ -54,7 +64,7 @@ Try **“atlas-api 서버를 백업해 두고 싶어. 계획을 만들어줘.”
 | `atlas-api 백업해줘` | Korean equivalent of the backup request |
 | `lumen-db 복구 리허설해줘` | Korean equivalent of the rehearsal request |
 
-Targets are `atlas-api`, `lumen-db`, and `cedar-worker`. Rule mode accepts explicit example commands. LLM mode accepts varied phrasing but still supports only one named target and one operation; unknown or ambiguous requests should be rejected. See the live evaluation for the measured limits of that behavior.
+Targets are `atlas-api`, `lumen-db`, and `cedar-worker`. Rule mode accepts explicit example commands. Basic Ollama mode accepts one target; RAG mode accepts one operation across up to three explicitly named targets. Unknown or ambiguous requests should be rejected. See the live evaluation for the measured limits of that behavior.
 
 ## What this demonstrates
 
@@ -64,6 +74,7 @@ Targets are `atlas-api`, `lumen-db`, and `cedar-worker`. Rule mode accepts expli
 - **Bounded failure handling:** transient errors retry up to three total attempts; integrity failures stop immediately.
 - **Restart and replay:** completed steps are preserved, queued work resumes, and SSE reconnects use persisted event sequence numbers.
 - **MCP interface:** a real stdio server exposes synthetic inventory, proposal, status, and event tools. It does not expose an approval tool.
+- **Grounded graph:** LangGraph target fan-out, local dense retrieval, citation/required-control validation, one bounded repair, server-owned execution DAG and per-target result aggregation.
 - **Local model integration:** Ollama JSON-schema output, strict response validation, target grounding, explicit timeout/error behavior, and opt-in live evaluation on synthetic requests.
 
 ## Architecture at a glance
@@ -101,6 +112,8 @@ Keep the UI server running. Configure a stdio client using the same checkout and
 
 The placeholder path must point to your checkout. If the UI uses a custom database, set the same absolute `OPS_LAB_DB` environment variable in both processes. Available tools: `list_demo_targets`, `propose_workflow`, `get_workflow`, `get_workflow_events`. Refresh the UI's recent-runs list to review a proposal created by an MCP host. Human decisions are made in the local UI/API.
 
+For the grounded graph, use `OPS_LAB_PLANNER=rag`, `OPS_LAB_MODEL=<installed tag>` and optionally `OPS_LAB_EMBEDDING_MODEL=bge-m3:latest`.
+
 MCP defaults to rule mode independently of the web process. To use local inference there too, add `OPS_LAB_PLANNER=ollama` and `OPS_LAB_MODEL=<your installed tag>` to the MCP server's environment.
 
 The dependency is deliberately constrained to the supported MCP SDK 1.x API, with an exact resolution in `uv.lock`. [Official SDK documentation](https://py.sdk.modelcontextprotocol.io/v1/).
@@ -122,7 +135,7 @@ The local [API reference](http://127.0.0.1:8765/docs) and [OpenAPI schema](http:
 
 This is an independently implemented **portfolio demonstration**, not an anonymized production release or a performance benchmark. It contains no actual backup, recovery, cloud provisioning, or product-specific implementation. The read-only inventory and verification outputs are simulated too.
 
-The optional LLM is an intent classifier over a fixed capability set, not an autonomous research or multi-step planning agent. There is no RAG corpus, semantic tool retrieval, or multi-target graph in this release. The application is local and single-user, with no authentication or multi-tenant authorization. Its approval gate demonstrates a workflow invariant; it does not authenticate the human making the HTTP request. Do not expose it as a public service without adding those controls.
+The LLM classifies intent and, in RAG mode, selects cited controls from an original eight-document synthetic corpus. The server owns the execution tools and dependencies. Retrieval chooses runbooks, not arbitrary tools. Local inference is serialized; graph branches are logically independent, not concurrent cloud operations. Planning state is in memory; only completed proposals and subsequent execution are durable. The application is local and single-user, with no authentication or multi-tenant authorization. Its approval gate demonstrates a workflow invariant; it does not authenticate the human making the HTTP request. Do not expose it as a public service without adding those controls.
 
 SQLite serializes the demo's immediate tool operations. The atomicity guarantees apply to these in-process simulations, not to real remote infrastructure. External adapters would need remote idempotency, leases, timeouts, and reconciliation. See the [design tradeoffs](docs/design-decisions.md).
 

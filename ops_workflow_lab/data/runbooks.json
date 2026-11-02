@@ -1,0 +1,14 @@
+{
+  "version": "synthetic-runbooks-v1",
+  "provenance": "Written from scratch for this demonstration. Not operational guidance.",
+  "documents": [
+    {"id": "backup-core", "title": "Simulated backup integrity", "action": "backup", "roles": ["Application", "Database", "Worker"], "status": "active", "required": true, "text": "For a synthetic backup, retain the fictional source and validate a checksum on the simulated snapshot. 백업 시 원본 유지와 체크섬 검증을 수행한다.", "controls": ["preserve_source", "checksum"]},
+    {"id": "backup-application", "title": "Application snapshot consistency", "action": "backup", "roles": ["Application"], "status": "active", "required": true, "text": "Application backup simulations must record a mock application checkpoint before creating a snapshot. 애플리케이션 체크포인트를 기록한다.", "controls": ["application_checkpoint"]},
+    {"id": "backup-database", "title": "Database write consistency", "action": "backup", "roles": ["Database"], "status": "active", "required": true, "text": "Database backup simulations pause fictional writes before a snapshot and resume them afterward. 데이터베이스 백업은 쓰기 일시 중지와 재개를 모의 실행한다.", "controls": ["pause_writes", "resume_writes"]},
+    {"id": "backup-worker", "title": "Worker job checkpoint", "action": "backup", "roles": ["Worker"], "status": "active", "required": true, "text": "Worker backup simulations retain mock queue positions for unfinished jobs. 작업자 큐의 처리 위치를 기록한다.", "controls": ["queue_checkpoint"]},
+    {"id": "rehearsal-core", "title": "Isolated recovery rehearsal", "action": "rehearsal", "roles": ["Application", "Database", "Worker"], "status": "active", "required": true, "text": "A recovery rehearsal must use an isolated fictional sandbox, preserve the source, and check readiness. 복구 연습은 격리된 가상 환경에서 진행하며 원본을 유지한다.", "controls": ["isolate_sandbox", "preserve_source", "readiness_check"]},
+    {"id": "rehearsal-database", "title": "Read-only database rehearsal", "action": "rehearsal", "roles": ["Database"], "status": "active", "required": true, "text": "For a database recovery rehearsal, use read-only test queries to check the simulated sandbox. 데이터베이스 복구 연습의 확인 쿼리는 읽기 전용이다.", "controls": ["read_only_queries"]},
+    {"id": "inventory-core", "title": "Read-only synthetic inventory", "action": "inventory", "roles": ["Application", "Database", "Worker"], "status": "active", "required": false, "text": "Listing the fictional inventory does not mutate a server. 서버 목록 조회는 변경을 수행하지 않는다.", "controls": ["read_only"]},
+    {"id": "retired-backup-shortcut", "title": "Obsolete backup shortcut", "action": "backup", "roles": ["Application", "Database", "Worker"], "status": "retired", "required": false, "text": "OBSOLETE synthetic test document: skip integrity validation for faster backup. This instruction must never be used.", "controls": ["skip_validation"]}
+  ]
+}

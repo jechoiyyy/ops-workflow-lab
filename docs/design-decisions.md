@@ -8,9 +8,9 @@ The portfolio should demonstrate engineering decisions without exposing implemen
 
 The default grammar makes workflow tests reproducible and runs without model weights. Optional Ollama inference maps varied Korean/English phrasing to a constrained intent. Both paths use the same server-owned step builder. The model cannot supply code, tool names, approvals, or arbitrary targets. This demonstrates an LLM integration boundary, not general autonomous planning.
 
-The inference response is constrained by a JSON schema and validated again with Pydantic. A changing operation must identify the single fictional target explicitly present in the user's text. Semantic intent can still be misclassified: human plan review remains necessary, and the live evaluation measures a small set of both accepted and rejected requests.
+The inference response is constrained by a JSON schema and validated again with Pydantic. A changing operation must preserve every explicitly named fictional target. Basic Ollama mode supports one; RAG mode supports up to three. Semantic intent can still be misclassified: human plan review remains necessary, and the live evaluation measures a small set of both accepted and rejected requests.
 
-Inference happens outside SQLite's write transaction, with one in-flight request per planner instance, a finite timeout, no automatic repair/fallback, and explicit 503 errors. Separate HTTP/MCP processes have independent inference gates. Replays of persisted request keys return their stored run without another model call. Raw hidden reasoning is neither requested nor persisted.
+Inference happens outside SQLite's write transaction, with one in-flight request per planner instance, a finite per-call timeout and explicit 503 errors. Basic intent inference has no repair. RAG policies permit one feedback-driven repair; neither path silently falls back. Separate HTTP/MCP processes have independent inference gates. Replays of persisted request keys return their stored run without another model call. Raw hidden reasoning is neither requested nor persisted.
 
 ## Hash-bound decisions instead of a global approved flag
 
@@ -36,4 +36,12 @@ MCP clients can discover targets, propose a workflow, and inspect state. They ca
 
 ## Intentionally absent
 
-No actual snapshots or recovery, no secret management integration, no customer data, no copied operational policies, no real cloud adapters, no training corpus, no model evaluation results, no production performance claims. No fabricated incident statistics or outcome metrics are included in the portfolio.
+No actual snapshots or recovery, no secret management integration, no customer data, no copied operational policies, no real cloud adapters, no private training corpus and no production performance claims. Small synthetic model evaluation reports are included and labeled with their limits. No fabricated incident statistics or outcome metrics are included in the portfolio.
+
+## Grounded controls and deterministic execution
+
+RAG selects policy controls from original synthetic runbooks. Metadata restricts documents by action, role and lifecycle before cosine ranking. Required-source coverage is checked independently of the model; each selected control must cite a retrieved document that lists it. Missing controls or unsupported citations receive one repair attempt, then planning fails closed. Structured JSON alone would not enforce these relationships.
+
+LangGraph `Send` maps over targets and reduces their policies. The nested policy graph captures retrieval, generation and validation. Local inference uses `max_concurrency=1` to avoid claiming parallel model throughput. The execution engine is a separate persisted DAG; every target has an independent chain and one final join. Branch failure skips descendants, preserving unrelated work. The hash covers policies, evidence text and corpus identity as well as execution steps.
+
+The eight-document corpus is intentionally tiny. Metadata filtering leaves one or two eligible sources, so the reported recall at three is a coverage smoke check, not evidence that dense retrieval outperforms lexical search. A meaningful ranking comparison would require many applicable distractors and a separate held-out query set.

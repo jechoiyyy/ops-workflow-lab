@@ -5,6 +5,7 @@ import os
 from mcp.server.fastmcp import FastMCP
 
 from .engine import Engine
+from .grounded import GroundedPlanner
 from .llm import OllamaPlanner
 from .planner import TARGETS
 from .store import Store
@@ -13,9 +14,14 @@ from .store import Store
 def build_server(db_path: str | None = None) -> FastMCP:
     store = Store(db_path or os.environ.get("OPS_LAB_DB", ".data/lab.db"))
     mode = os.environ.get("OPS_LAB_PLANNER", "deterministic")
-    if mode not in {"deterministic", "ollama"}:
-        raise ValueError("OPS_LAB_PLANNER must be deterministic or ollama.")
+    if mode not in {"deterministic", "ollama", "rag"}:
+        raise ValueError("OPS_LAB_PLANNER must be deterministic, ollama or rag.")
     planner = OllamaPlanner(os.environ.get("OPS_LAB_MODEL", "")) if mode == "ollama" else None
+    if mode == "rag":
+        planner = GroundedPlanner(
+            os.environ.get("OPS_LAB_MODEL", ""),
+            embedding_model=os.environ.get("OPS_LAB_EMBEDDING_MODEL", "bge-m3:latest"),
+        )
     engine = Engine(store, planner=planner) if planner else Engine(store)
     server = FastMCP("Ops Workflow Lab")
 

@@ -16,6 +16,7 @@ from pydantic import BaseModel, ConfigDict, Field
 from starlette.middleware.trustedhost import TrustedHostMiddleware
 
 from .engine import TERMINAL, Engine
+from .grounded import GroundedPlanner
 from .llm import OllamaPlanner
 from .planner import TARGETS, Conflict, InvalidRequest, NotFound, PlannerUnavailable
 from .store import Store
@@ -39,7 +40,7 @@ class DecisionInput(BaseModel):
 def create_app(
     db_path: str | None = None,
     tick_interval: float = 0.65,
-    planner: OllamaPlanner | None = None,
+    planner: OllamaPlanner | GroundedPlanner | None = None,
 ) -> FastAPI:
     store = Store(db_path or os.environ.get("OPS_LAB_DB", ".data/lab.db"))
     engine = Engine(store, planner=planner) if planner else Engine(store)
@@ -63,7 +64,7 @@ def create_app(
 
     app = FastAPI(
         title="Ops Workflow Lab",
-        version="0.1.0",
+        version="0.2.0",
         lifespan=lifespan,
         docs_url=None,
         redoc_url=None,
@@ -112,8 +113,9 @@ def create_app(
         return {
             "status": "ok",
             "mode": "synthetic",
-            "planner": "ollama" if planner else "deterministic",
+            "planner": getattr(planner, "mode", "ollama") if planner else "deterministic",
             "model": planner.model if planner else None,
+            "embedding_model": getattr(planner, "embedding_model", None),
         }
 
     @app.get("/api/targets")
@@ -192,15 +194,20 @@ def main():
     parser = argparse.ArgumentParser(description="Run the local synthetic operations lab.")
     parser.add_argument("--port", type=int, default=8765)
     parser.add_argument("--db", default=os.environ.get("OPS_LAB_DB", ".data/lab.db"))
-    parser.add_argument("--planner", choices=["deterministic", "ollama"], default="deterministic")
+    parser.add_argument(
+        "--planner", choices=["deterministic", "ollama", "rag"], default="deterministic"
+    )
+    parser.add_argument("--embedding-model", default="bge-m3:latest")
     parser.add_argument("--model", default=os.environ.get("OPS_LAB_MODEL", ""))
     parser.add_argument("--ollama-url", default="http://127.0.0.1:11434")
     args = parser.parse_args()
-    if args.planner == "ollama" and not args.model:
+    if args.planner != "deterministic" and not args.model:
         parser.error(
             "--model is required with --planner ollama; use an installed local model name."
         )
     planner = OllamaPlanner(args.model, args.ollama_url) if args.planner == "ollama" else None
+    if args.planner == "rag":
+        planner = GroundedPlanner(args.model, args.ollama_url, args.embedding_model)
     uvicorn.run(
         create_app(args.db, planner=planner), host="127.0.0.1", port=args.port, access_log=False
     )

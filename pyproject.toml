@@ -4,11 +4,11 @@ build-backend = "hatchling.build"
 
 [project]
 name = "ops-workflow-lab"
-version = "0.1.0"
+version = "0.2.0"
 description = "A local operations-agent demo with human approval, durable events, and simulated infrastructure."
 readme = "README.md"
 requires-python = ">=3.11"
-dependencies = ["fastapi>=0.115,<1", "uvicorn>=0.34,<1", "mcp>=1.12,<2", "httpx>=0.28,<1"]
+dependencies = ["fastapi>=0.115,<1", "uvicorn>=0.34,<1", "mcp>=1.12,<2", "httpx>=0.28,<1", "langgraph>=1,<2"]
 
 [project.optional-dependencies]
 dev = ["pytest>=8,<10", "httpx>=0.28,<1", "ruff>=0.11,<1"]

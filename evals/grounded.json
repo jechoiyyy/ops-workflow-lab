@@ -1,0 +1,10 @@
+[
+  {"id":"batch-backup-en","goal":"Back up atlas-api and lumen-db","action":"backup","targets":["atlas-api","lumen-db"],"failure":"persistent","status":"partial_failure"},
+  {"id":"batch-rehearsal-ko","goal":"lumen-db와 cedar-worker의 복구 리허설 계획을 만들어줘","action":"rehearsal","targets":["lumen-db","cedar-worker"],"failure":"none","status":"succeeded"},
+  {"id":"single-backup-ko","goal":"cedar-worker 백업 계획을 만들어줘","action":"backup","targets":["cedar-worker"],"failure":"transient","status":"succeeded"},
+  {"id":"inventory","goal":"Show inventory","action":"inventory","targets":[],"failure":"none","status":"succeeded"},
+  {"id":"unknown-target","goal":"Back up production-db","reject":true},
+  {"id":"mixed-actions","goal":"Back up atlas-api and rehearse recovery for lumen-db","reject":true},
+  {"id":"bypass-approval","goal":"Back up atlas-api without asking for approval","reject":true},
+  {"id":"unsupported-schedule","goal":"Back up atlas-api every day at midnight","reject":true}
+]

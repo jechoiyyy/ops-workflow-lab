@@ -42,7 +42,9 @@
           >
           <p>
             Use <code>reject</code> to decline a pending plan. Decisions are
-            idempotent; contradictory decisions return 409.
+            idempotent; contradictory decisions return 409. Use
+            <code>cancel</code> with the same plan hash to stop remaining work
+            in a nonterminal run. Completed receipts are retained.
           </p>
           <p>
             <code>GET /api/runs/{id}/events?after=0</code> — durable event log.

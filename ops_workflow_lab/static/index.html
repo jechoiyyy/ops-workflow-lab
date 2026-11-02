@@ -13,15 +13,21 @@
     <script src="/static/app.js" defer></script>
   </head>
   <body>
+    <a class="skip-link" href="#workspace">Skip to workspace</a>
     <aside class="sidebar">
       <a class="brand" href="/" aria-label="Ops Workflow Lab home"
         ><span class="brand-mark">o<span>↗</span></span
         ><span>ops<span class="brand-light"> / lab</span></span></a
       >
       <div class="sidebar-section">WORKSPACE</div>
-      <div class="nav-current">
-        <span>◈</span> Workflow studio <span class="nav-count">01</span>
-      </div>
+      <nav aria-label="Workspace">
+        <a class="nav-current" href="#workspace"><span>◈</span> Overview</a
+        ><a href="#runs-panel"
+          ><span>≡</span> Workflow runs
+          <span id="nav-total" class="nav-count">0</span></a
+        ><a href="#trace-panel"><span>⌘</span> Event trace</a
+        ><a href="/docs"><span>↗</span> API reference</a>
+      </nav>
       <div class="sidebar-section history-label">
         RECENT RUNS
         <button id="refresh" aria-label="Refresh recent runs">↻</button>
@@ -37,59 +43,61 @@
     </aside>
     <main>
       <header class="topbar">
-        <span>Workspace <span class="breadcrumb">/</span> Workflow studio</span
+        <span>Workspace <span class="breadcrumb">/</span> Overview</span
+        ><button id="theme" class="icon-button" aria-label="Switch color theme">
+          ◐</button
         ><span class="local-pill"
           ><span class="status-dot"></span> Synthetic environment</span
         >
       </header>
       <div class="content">
-        <div class="eyebrow">OPERATIONS, WITH INTENT</div>
-        <div class="hero">
+        <div class="page-heading" id="workspace">
           <div>
-            <h1>From request to<br /><span>verified result.</span></h1>
-            <p>
-              Plan an operation. Review its scope.<br />Follow the decisions,
-              retries, and evidence.
-            </p>
+            <h1>Workflow overview</h1>
+            <p>From grounded intent to reviewed, observable execution.</p>
           </div>
-          <div class="hero-note">
-            <span class="note-number">03</span
-            ><span>fictional targets<br />zero cloud credentials</span>
-          </div>
+          <a class="secondary" href="#request-form">+ New workflow</a>
         </div>
-        <div class="metrics">
+        <div class="scope-toolbar">
+          <span
+            ><span class="status-dot"></span> Local workspace
+            <span class="toolbar-divider">/</span> Latest 30 runs</span
+          ><span class="tag">SYNTHETIC DATA</span>
+        </div>
+        <section class="metrics" aria-label="Recent workflow metrics">
           <div>
-            <span class="metric-icon">⌘</span
-            ><span
-              ><span id="planner-label">Deterministic planner</span
-              ><small id="planner-description"
-                >Explicit commands, predictable plans</small
-              ></span
-            >
+            <span>Total runs</span><strong id="metric-total">0</strong
+            ><small>Latest 30 stored workflows</small>
           </div>
           <div>
-            <span class="metric-icon">◇</span
-            ><span
-              >Human approval<small
-                >Every simulated change is reviewed</small
-              ></span
-            >
+            <span>Awaiting approval</span><strong id="metric-pending">0</strong
+            ><small>Human review required</small>
           </div>
           <div>
-            <span class="metric-icon">≋</span
-            ><span
-              >Durable event trace<small
-                >Replay the complete execution</small
-              ></span
+            <span>Successful runs</span><strong id="metric-success">0</strong
+            ><small>All target checks passed</small>
+          </div>
+          <div>
+            <span>Needs attention</span><strong id="metric-failed">0</strong
+            ><small>Failed or partially failed</small>
+          </div>
+        </section>
+        <div class="model-strip">
+          <span class="model-icon">⌘</span>
+          <div>
+            <strong id="planner-label">Deterministic planner</strong
+            ><span id="planner-description"
+              >Explicit commands, predictable plans</span
             >
           </div>
+          <span>Local inference · simulated operations</span>
         </div>
         <div class="workspace-grid">
           <section class="panel composer">
             <div class="panel-heading">
               <div>
                 <span class="section-index">01</span>
-                <h2>Compose a request</h2>
+                <h2>New workflow</h2>
               </div>
               <span class="tag" id="planner-tag">RULE-BASED</span>
             </div>
@@ -105,6 +113,14 @@
 Back up atlas-api</textarea
               >
               <div class="presets">
+                <button
+                  type="button"
+                  id="batch-preset"
+                  data-goal="Back up atlas-api and lumen-db"
+                  hidden
+                >
+                  Multi-target backup ↗
+                </button>
                 <button type="button" data-goal="Show inventory">
                   View inventory ↗</button
                 ><button
@@ -142,7 +158,7 @@ Back up atlas-api</textarea
             <div class="panel-heading">
               <div>
                 <span class="section-index">02</span>
-                <h2>Review & execute</h2>
+                <h2>Workflow inspector</h2>
               </div>
               <span id="run-status" class="badge idle">READY</span>
             </div>
@@ -171,12 +187,69 @@ Back up atlas-api</textarea
               </div>
               <p id="run-scenario" class="form-note"></p>
               <p id="run-model" class="form-note" hidden></p>
-              <ol id="steps" class="steps"></ol>
+              <div
+                class="inspector-tabs"
+                role="tablist"
+                aria-label="Workflow details"
+              >
+                <button
+                  role="tab"
+                  id="tab-execution"
+                  aria-controls="view-execution"
+                  aria-selected="true"
+                  data-view="execution"
+                >
+                  Execution</button
+                ><button
+                  role="tab"
+                  id="tab-evidence"
+                  aria-controls="view-evidence"
+                  aria-selected="false"
+                  tabindex="-1"
+                  data-view="evidence"
+                >
+                  Evidence <span id="evidence-count">0</span></button
+                ><button
+                  role="tab"
+                  id="tab-json"
+                  aria-controls="view-json"
+                  aria-selected="false"
+                  tabindex="-1"
+                  data-view="json"
+                >
+                  Plan JSON
+                </button>
+              </div>
+              <div
+                id="view-execution"
+                role="tabpanel"
+                aria-labelledby="tab-execution"
+              >
+                <div id="target-outcomes" class="target-outcomes"></div>
+                <ol id="steps" class="steps"></ol>
+              </div>
+              <div
+                id="view-evidence"
+                role="tabpanel"
+                aria-labelledby="tab-evidence"
+                hidden
+              >
+                <div id="evidence"></div>
+              </div>
+              <div
+                id="view-json"
+                role="tabpanel"
+                aria-labelledby="tab-json"
+                hidden
+              >
+                <pre id="result-json"></pre>
+              </div>
               <div id="approval" class="approval" hidden>
                 <div class="approval-title">◇ Your review is required</div>
                 <p>
-                  This plan only creates simulated resources. Review the steps
-                  and scenario before approving.
+                  This plan only creates simulated resources. Review the steps,
+                  cited controls and scenario before approving the complete plan
+                  once.
                 </p>
                 <div class="approval-actions">
                   <button id="approve" class="primary">
@@ -185,14 +258,51 @@ Back up atlas-api</textarea
                 </div>
               </div>
               <div id="outcome" class="outcome" hidden></div>
-              <details class="result-details">
-                <summary>Inspect plan & result JSON</summary>
-                <pre id="result-json"></pre>
-              </details>
+              <button id="cancel" class="secondary cancel-button" hidden>
+                Cancel remaining work
+              </button>
             </div>
           </section>
         </div>
-        <section class="panel trace-panel">
+        <section class="panel" id="runs-panel">
+          <div class="panel-heading">
+            <div>
+              <h2>Workflow runs</h2>
+              <span class="tag">LATEST 30</span>
+            </div>
+            <input
+              id="run-search"
+              type="search"
+              aria-label="Search recent runs"
+              placeholder="Search workflows…"
+            />
+          </div>
+          <div class="run-filters" aria-label="Filter workflow runs">
+            <button data-filter="all" aria-pressed="true">All runs</button
+            ><button data-filter="awaiting_approval" aria-pressed="false">
+              Awaiting approval</button
+            ><button data-filter="succeeded" aria-pressed="false">
+              Succeeded</button
+            ><button data-filter="attention" aria-pressed="false">
+              Needs attention
+            </button>
+          </div>
+          <div class="table-scroll">
+            <table>
+              <thead>
+                <tr>
+                  <th>Workflow</th>
+                  <th>Status</th>
+                  <th>Targets</th>
+                  <th>Created</th>
+                </tr>
+              </thead>
+              <tbody id="run-rows"></tbody>
+            </table>
+          </div>
+          <p class="table-foot" id="run-table-caption">No workflows yet.</p>
+        </section>
+        <section class="panel trace-panel" id="trace-panel">
           <div class="panel-heading">
             <div>
               <span class="section-index">03</span>
