@@ -1,333 +1,463 @@
 <!doctype html>
-<html lang="en">
+<html lang="ko">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
     <meta
       name="description"
-      content="An interactive, local demonstration of approval-gated operations workflows."
+      content="근거 검색부터 승인과 실행 검증까지 살펴보는 로컬 AI 에이전트 데모"
     />
-    <title>Ops Workflow Lab</title>
+    <title>Ops Lab · 워크플로 관측</title>
     <link rel="icon" href="data:," />
     <link rel="stylesheet" href="/static/style.css" />
     <script src="/static/app.js" defer></script>
   </head>
   <body>
-    <a class="skip-link" href="#workspace">Skip to workspace</a>
-    <aside class="sidebar">
-      <a class="brand" href="/" aria-label="Ops Workflow Lab home"
-        ><span class="brand-mark">o<span>↗</span></span
-        ><span>ops<span class="brand-light"> / lab</span></span></a
+    <a class="skip-link" href="#workspace">본문으로 이동</a>
+    <aside class="sidebar" id="sidebar">
+      <a class="brand" href="/" aria-label="Ops Lab 홈"
+        ><span class="brand-mark"><i data-icon="workflow"></i></span
+        ><span class="brand-wordmark"
+          ><strong>Ops <em>Lab</em></strong
+          ><small>워크플로 관측</small></span
+        ></a
       >
-      <div class="sidebar-section">WORKSPACE</div>
-      <nav aria-label="Workspace">
-        <a class="nav-current" href="#workspace"><span>◈</span> Overview</a
-        ><a href="#runs-panel"
-          ><span>≡</span> Workflow runs
-          <span id="nav-total" class="nav-count">0</span></a
-        ><a href="#trace-panel"><span>⌘</span> Event trace</a
-        ><a href="/docs"><span>↗</span> API reference</a>
+      <nav aria-label="주 메뉴">
+        <div class="nav-group">
+          <span class="sidebar-section">워크스페이스</span
+          ><button data-page="overview" class="nav-current">
+            <i data-icon="overview"></i><span>운영 개요</span></button
+          ><button data-compose>
+            <i data-icon="sparkles"></i><span>새 워크플로</span>
+          </button>
+        </div>
+        <div class="nav-group">
+          <span class="sidebar-section">관측</span
+          ><button data-page="runs">
+            <i data-icon="runs"></i><span>실행 탐색</span
+            ><small id="nav-total">0</small></button
+          ><button id="open-trace">
+            <i data-icon="trace"></i><span>실행 추적</span>
+          </button>
+        </div>
+        <div class="nav-group">
+          <span class="sidebar-section">시스템</span
+          ><button data-page="sources">
+            <i data-icon="database"></i><span>데이터 소스</span></button
+          ><a href="/docs"
+            ><i data-icon="book"></i><span>API 문서</span
+            ><i data-icon="external"></i
+          ></a>
+        </div>
       </nav>
-      <div class="sidebar-section history-label">
-        RECENT RUNS
-        <button id="refresh" aria-label="Refresh recent runs">↻</button>
-      </div>
-      <div id="history" class="history">
-        <p class="quiet">Your runs will appear here.</p>
-      </div>
-      <div class="sidebar-foot">
-        <span class="status-dot"></span> LOCAL SANDBOX<br /><span
-          >Fictional targets. Real workflow state.</span
-        >
-      </div>
+      <button class="sidebar-foot" data-page="sources">
+        <i data-icon="database"></i
+        ><span>데이터 소스<small>로컬 · 합성 환경</small></span
+        ><b class="status-dot"></b>
+      </button>
     </aside>
     <main>
       <header class="topbar">
-        <span>Workspace <span class="breadcrumb">/</span> Overview</span
-        ><button id="theme" class="icon-button" aria-label="Switch color theme">
-          ◐</button
-        ><span class="local-pill"
-          ><span class="status-dot"></span> Synthetic environment</span
+        <button
+          id="sidebar-toggle"
+          class="icon-button"
+          aria-label="사이드바 접기"
+          aria-expanded="true"
         >
+          <i data-icon="panel"></i></button
+        ><span class="header-separator"></span
+        ><span class="crumb">워크스페이스</span
+        ><i class="crumb" data-icon="chevron"></i
+        ><span id="breadcrumb">운영 개요</span>
+        <div class="header-right">
+          <span class="environment-tag"
+            ><b class="status-dot"></b>합성 데이터</span
+          ><button
+            id="theme"
+            class="icon-button"
+            aria-label="밝은 테마·어두운 테마 전환"
+          >
+            <i data-icon="sun"></i>
+          </button>
+        </div>
       </header>
-      <div class="content">
-        <div class="page-heading" id="workspace">
-          <div>
-            <h1>Workflow overview</h1>
-            <p>From grounded intent to reviewed, observable execution.</p>
-          </div>
-          <a class="secondary" href="#request-form">+ New workflow</a>
+      <div class="content" id="workspace">
+        <div class="page-heading">
+          <h1 id="page-title">운영 개요</h1>
+          <button class="secondary" data-compose>
+            <i data-icon="plus"></i>새 워크플로
+          </button>
         </div>
         <div class="scope-toolbar">
-          <span
-            ><span class="status-dot"></span> Local workspace
-            <span class="toolbar-divider">/</span> Latest 30 runs</span
-          ><span class="tag">SYNTHETIC DATA</span>
+          <div class="scope-left">
+            <i data-icon="calendar"></i><span>최근 30건</span
+            ><span class="toolbar-divider"></span><i data-icon="workflow"></i
+            ><span>전체 워크플로</span
+            ><span class="subtle-tag">로컬 실행 기록</span>
+          </div>
+          <button id="refresh" class="secondary">
+            <i data-icon="refresh"></i>새로고침
+          </button>
         </div>
-        <section class="metrics" aria-label="Recent workflow metrics">
-          <div>
-            <span>Total runs</span><strong id="metric-total">0</strong
-            ><small>Latest 30 stored workflows</small>
+        <section id="overview-panel">
+          <div class="metrics" aria-label="최근 실행 지표">
+            <button data-metric="all">
+              <span>전체 실행<i data-icon="runs"></i></span
+              ><strong id="metric-total">0</strong
+              ><small>최근 저장된 워크플로 기준</small>
+            </button>
+            <button data-metric="awaiting_approval">
+              <span>승인 대기<i data-icon="shield"></i></span
+              ><strong id="metric-pending">0</strong
+              ><small>검토 후 실행할 수 있습니다</small>
+            </button>
+            <button data-metric="succeeded">
+              <span>실행 성공<i data-icon="check-circle"></i></span
+              ><strong id="metric-success">0</strong
+              ><small>모든 대상의 검증 완료</small>
+            </button>
+            <button data-metric="attention">
+              <span>확인 필요<i data-icon="warning"></i></span
+              ><strong id="metric-failed">0</strong
+              ><small>실패 또는 부분 실패한 실행</small>
+            </button>
           </div>
-          <div>
-            <span>Awaiting approval</span><strong id="metric-pending">0</strong
-            ><small>Human review required</small>
+          <div class="analytics-grid">
+            <section class="panel">
+              <div class="panel-heading">
+                <div>
+                  <h2>실행 추이</h2>
+                  <p>최근 24시간 · 생성 시각별 현재 상태</p>
+                </div>
+                <span class="subtle-tag">최근 30건 내</span>
+              </div>
+              <div
+                id="trend-chart"
+                class="trend-chart"
+                role="img"
+                aria-label="실행 기록을 불러오는 중"
+              ></div>
+              <div class="panel-footer">
+                <div class="chart-legend">
+                  <span><b class="legend-dot success"></b>성공</span
+                  ><span><b class="legend-dot error"></b>실패·부분 실패</span
+                  ><span><b class="legend-dot neutral"></b>기타</span>
+                </div>
+                <span id="trend-caption">실행 기록 없음</span>
+              </div>
+            </section>
+            <section class="panel">
+              <div class="panel-heading">
+                <div>
+                  <h2>대상별 실행</h2>
+                  <p>가상 서버별 워크플로 참여 현황</p>
+                </div>
+                <i data-icon="server"></i>
+              </div>
+              <div id="target-activity" class="target-activity"></div>
+              <div class="panel-footer">
+                여러 대상이 한 워크플로에 참여할 수 있습니다.
+              </div>
+            </section>
           </div>
-          <div>
-            <span>Successful runs</span><strong id="metric-success">0</strong
-            ><small>All target checks passed</small>
-          </div>
-          <div>
-            <span>Needs attention</span><strong id="metric-failed">0</strong
-            ><small>Failed or partially failed</small>
-          </div>
+          <button id="attention-banner" class="attention-banner" hidden>
+            <i data-icon="warning"></i
+            ><span
+              ><strong id="attention-title"></strong
+              ><small>실패한 단계와 대상별 결과를 확인하세요.</small></span
+            ><span>실행 보기<i data-icon="arrow"></i></span>
+          </button>
         </section>
-        <div class="model-strip">
-          <span class="model-icon">⌘</span>
-          <div>
-            <strong id="planner-label">Deterministic planner</strong
-            ><span id="planner-description"
-              >Explicit commands, predictable plans</span
-            >
-          </div>
-          <span>Local inference · simulated operations</span>
-        </div>
-        <div class="workspace-grid">
-          <section class="panel composer">
-            <div class="panel-heading">
-              <div>
-                <span class="section-index">01</span>
-                <h2>New workflow</h2>
-              </div>
-              <span class="tag" id="planner-tag">RULE-BASED</span>
-            </div>
-            <form id="request-form">
-              <label for="goal">What would you like to do?</label>
-              <textarea
-                id="goal"
-                maxlength="180"
-                rows="3"
-                required
-                spellcheck="false"
-              >
-Back up atlas-api</textarea
-              >
-              <div class="presets">
-                <button
-                  type="button"
-                  id="batch-preset"
-                  data-goal="Back up atlas-api and lumen-db"
-                  hidden
-                >
-                  Multi-target backup ↗
-                </button>
-                <button type="button" data-goal="Show inventory">
-                  View inventory ↗</button
-                ><button
-                  type="button"
-                  data-goal="Rehearse recovery for lumen-db"
-                >
-                  Rehearse recovery ↗</button
-                ><button type="button" data-goal="Back up atlas-api">
-                  Back up a server ↗
-                </button>
-              </div>
-              <div class="scenario-row">
-                <label for="failure">Simulation scenario</label
-                ><select id="failure">
-                  <option value="none">Successful execution</option>
-                  <option value="transient">Timeout once, then recover</option>
-                  <option value="persistent">Exhaust the retry budget</option>
-                  <option value="verification">Fail the integrity check</option>
-                </select>
-              </div>
-              <button class="primary" type="submit" id="create">
-                Build execution plan <span>→</span>
-              </button>
-              <p class="form-note" id="planner-help">
-                Supports the example commands above and their Korean
-                equivalents. No LLM or cloud calls.
-              </p>
-            </form>
-            <div class="inventory-heading">
-              <span>SYNTHETIC INVENTORY</span><span>3 targets</span>
-            </div>
-            <div id="targets"></div>
-          </section>
-          <section class="panel execution">
-            <div class="panel-heading">
-              <div>
-                <span class="section-index">02</span>
-                <h2>Workflow inspector</h2>
-              </div>
-              <span id="run-status" class="badge idle">READY</span>
-            </div>
-            <div id="empty-state" class="empty-state">
-              <div class="empty-symbol">◇</div>
-              <h3>A clear plan before any change.</h3>
-              <p>
-                Build a plan to see the exact target, steps,<br />and approval
-                decision.
-              </p>
-              <div class="mini-flow">
-                <span>Plan</span><i>→</i><span>Approve</span><i>→</i
-                ><span>Verify</span>
-              </div>
-            </div>
-            <div id="run-detail" hidden>
-              <div class="run-meta">
-                <div>
-                  <span class="small-label">TARGET</span
-                  ><strong id="run-target"></strong>
-                </div>
-                <div>
-                  <span class="small-label">RUN ID</span
-                  ><code id="run-id"></code>
-                </div>
-              </div>
-              <p id="run-scenario" class="form-note"></p>
-              <p id="run-model" class="form-note" hidden></p>
-              <div
-                class="inspector-tabs"
-                role="tablist"
-                aria-label="Workflow details"
-              >
-                <button
-                  role="tab"
-                  id="tab-execution"
-                  aria-controls="view-execution"
-                  aria-selected="true"
-                  data-view="execution"
-                >
-                  Execution</button
-                ><button
-                  role="tab"
-                  id="tab-evidence"
-                  aria-controls="view-evidence"
-                  aria-selected="false"
-                  tabindex="-1"
-                  data-view="evidence"
-                >
-                  Evidence <span id="evidence-count">0</span></button
-                ><button
-                  role="tab"
-                  id="tab-json"
-                  aria-controls="view-json"
-                  aria-selected="false"
-                  tabindex="-1"
-                  data-view="json"
-                >
-                  Plan JSON
-                </button>
-              </div>
-              <div
-                id="view-execution"
-                role="tabpanel"
-                aria-labelledby="tab-execution"
-              >
-                <div id="target-outcomes" class="target-outcomes"></div>
-                <ol id="steps" class="steps"></ol>
-              </div>
-              <div
-                id="view-evidence"
-                role="tabpanel"
-                aria-labelledby="tab-evidence"
-                hidden
-              >
-                <div id="evidence"></div>
-              </div>
-              <div
-                id="view-json"
-                role="tabpanel"
-                aria-labelledby="tab-json"
-                hidden
-              >
-                <pre id="result-json"></pre>
-              </div>
-              <div id="approval" class="approval" hidden>
-                <div class="approval-title">◇ Your review is required</div>
-                <p>
-                  This plan only creates simulated resources. Review the steps,
-                  cited controls and scenario before approving the complete plan
-                  once.
-                </p>
-                <div class="approval-actions">
-                  <button id="approve" class="primary">
-                    Approve plan <span>→</span></button
-                  ><button id="reject" class="secondary">Reject</button>
-                </div>
-              </div>
-              <div id="outcome" class="outcome" hidden></div>
-              <button id="cancel" class="secondary cancel-button" hidden>
-                Cancel remaining work
-              </button>
-            </div>
-          </section>
-        </div>
         <section class="panel" id="runs-panel">
           <div class="panel-heading">
             <div>
-              <h2>Workflow runs</h2>
-              <span class="tag">LATEST 30</span>
+              <h2>워크플로 실행</h2>
+              <p>요청부터 승인, 실행 결과까지 한 곳에서 확인합니다.</p>
             </div>
-            <input
-              id="run-search"
-              type="search"
-              aria-label="Search recent runs"
-              placeholder="Search workflows…"
-            />
+            <span class="subtle-tag" id="run-total-label">0건</span>
           </div>
-          <div class="run-filters" aria-label="Filter workflow runs">
-            <button data-filter="all" aria-pressed="true">All runs</button
+          <div class="run-filters" aria-label="실행 상태 필터">
+            <button data-filter="all" aria-pressed="true">전체 실행</button
             ><button data-filter="awaiting_approval" aria-pressed="false">
-              Awaiting approval</button
-            ><button data-filter="succeeded" aria-pressed="false">
-              Succeeded</button
+              승인 대기</button
+            ><button data-filter="succeeded" aria-pressed="false">성공</button
             ><button data-filter="attention" aria-pressed="false">
-              Needs attention
+              확인 필요
             </button>
+          </div>
+          <div class="table-tools">
+            <label class="table-search"
+              ><i data-icon="search"></i
+              ><input
+                id="run-search"
+                type="search"
+                aria-label="실행 검색"
+                placeholder="요청 또는 실행 ID 검색…" /></label
+            ><span class="muted">최신순</span>
           </div>
           <div class="table-scroll">
             <table>
               <thead>
                 <tr>
-                  <th>Workflow</th>
-                  <th>Status</th>
-                  <th>Targets</th>
-                  <th>Created</th>
+                  <th>워크플로</th>
+                  <th>상태</th>
+                  <th>대상</th>
+                  <th>생성 시각</th>
+                  <th><span class="sr-only">상세</span></th>
                 </tr>
               </thead>
               <tbody id="run-rows"></tbody>
             </table>
           </div>
-          <p class="table-foot" id="run-table-caption">No workflows yet.</p>
+          <p class="table-foot" id="run-table-caption">
+            아직 실행 기록이 없습니다.
+          </p>
         </section>
-        <section class="panel trace-panel" id="trace-panel">
-          <div class="panel-heading">
-            <div>
-              <span class="section-index">03</span>
-              <h2>Execution trace</h2>
-              <span id="event-count" class="tag">0 EVENTS</span>
-            </div>
-            <span class="trace-caption"
-              ><span class="status-dot"></span> Persisted · replayable</span
+        <section id="sources-panel" hidden>
+          <div class="source-notice">
+            <i data-icon="info"></i
+            ><span
+              >모든 서버와 작업 결과는 합성 데이터입니다. 모델 추론은 로컬
+              Ollama에서 실행됩니다.</span
             >
           </div>
-          <div id="trace" class="trace" role="log" aria-live="polite">
-            <div class="trace-placeholder">
-              Every approval, tool attempt, and verification result will appear
-              here.
-            </div>
+          <div class="sources-grid">
+            <section class="panel">
+              <div class="panel-heading">
+                <h2>계획 생성기</h2>
+                <i data-icon="sparkles"></i>
+              </div>
+              <div class="source-body">
+                <strong id="planner-label">규칙 기반 계획</strong>
+                <p id="planner-description">
+                  정해진 명령으로 재현 가능한 계획 생성
+                </p>
+                <span class="subtle-tag" id="planner-tag">규칙 모드</span>
+              </div>
+              <div class="panel-footer">
+                모델이 실행 단계를 승인하거나 직접 실행하지 않습니다.
+              </div>
+            </section>
+            <section class="panel">
+              <div class="panel-heading">
+                <h2>가상 서버</h2>
+                <span class="subtle-tag">3개 대상</span>
+              </div>
+              <div id="targets"></div>
+              <div class="panel-footer">
+                실제 클라우드 자격 증명은 사용하지 않습니다.
+              </div>
+            </section>
           </div>
         </section>
         <footer>
-          <span
-            >OPS WORKFLOW LAB <span class="footer-divider">/</span> An
-            independent portfolio demonstration</span
-          ><a href="/docs">Explore the API ↗</a>
+          <span>Ops Lab · 독립적으로 구현한 포트폴리오 데모</span
+          ><a href="/docs">API 문서<i data-icon="external"></i></a>
         </footer>
       </div>
     </main>
+    <dialog
+      id="compose-dialog"
+      class="compose-dialog"
+      aria-labelledby="compose-title"
+    >
+      <div class="dialog-heading">
+        <div>
+          <h2 id="compose-title">새 워크플로</h2>
+          <p>작업을 요청하고 생성된 계획을 검토하세요.</p>
+        </div>
+        <button
+          class="icon-button"
+          data-close="compose-dialog"
+          aria-label="새 워크플로 닫기"
+        >
+          <i data-icon="close"></i>
+        </button>
+      </div>
+      <form id="request-form">
+        <label for="goal">어떤 작업을 진행할까요?</label
+        ><textarea
+          id="goal"
+          maxlength="180"
+          rows="4"
+          required
+          spellcheck="false"
+        >
+atlas-api 백업해줘</textarea
+        >
+        <div class="presets">
+          <button
+            type="button"
+            id="batch-preset"
+            data-goal="atlas-api와 lumen-db의 백업 계획을 만들어줘"
+            hidden
+          >
+            여러 대상 백업</button
+          ><button type="button" data-goal="서버 목록 보여줘">서버 목록</button
+          ><button type="button" data-goal="lumen-db 복구 리허설해줘">
+            복구 리허설</button
+          ><button type="button" data-goal="atlas-api 백업해줘">
+            단일 대상 백업
+          </button>
+        </div>
+        <div class="scenario-row">
+          <label for="failure">시뮬레이션 시나리오</label
+          ><select id="failure">
+            <option value="none">정상 실행</option>
+            <option value="transient">한 번 실패한 뒤 재시도 성공</option>
+            <option value="persistent">재시도 한도 소진</option>
+            <option value="verification">무결성 검증 실패</option>
+          </select>
+        </div>
+        <p class="form-note" id="planner-help">
+          예시 명령과 한국어 표현을 지원합니다. 모델이나 클라우드를 호출하지
+          않습니다.
+        </p>
+        <p id="form-error" class="form-error" role="alert" hidden></p>
+        <div class="compose-footer">
+          <span><i data-icon="shield"></i>실행 전 사용자 승인</span
+          ><button class="primary" type="submit" id="create">
+            계획 생성<i data-icon="arrow"></i>
+          </button>
+        </div>
+      </form>
+    </dialog>
+    <dialog
+      id="inspector-dialog"
+      class="inspector-dialog"
+      aria-labelledby="inspector-title"
+    >
+      <div class="dialog-heading">
+        <div>
+          <div class="detail-eyebrow">
+            <i data-icon="trace"></i>워크플로 상세
+            <span id="run-status" class="badge idle">준비</span>
+          </div>
+          <h2 id="inspector-title">실행 상세</h2>
+          <p id="run-model" hidden></p>
+        </div>
+        <button
+          class="icon-button"
+          data-close="inspector-dialog"
+          aria-label="실행 상세 닫기"
+        >
+          <i data-icon="close"></i>
+        </button>
+      </div>
+      <div class="run-meta">
+        <span
+          ><span class="muted">대상</span
+          ><strong id="run-target"></strong></span
+        ><span
+          ><span class="muted">실행 ID</span><code id="run-id"></code
+        ></span>
+      </div>
+      <p id="run-scenario" class="simulation-note"></p>
+      <div id="empty-state" class="empty-state">
+        <i data-icon="workflow"></i>
+        <h3>검토할 계획을 먼저 생성하세요.</h3>
+        <p>대상과 근거, 실행 단계를 확인한 뒤 승인할 수 있습니다.</p>
+      </div>
+      <div id="run-detail" hidden>
+        <div class="trace-workspace">
+          <aside class="step-tree">
+            <h3>실행 단계 <span id="step-count"></span></h3>
+            <ol id="steps" class="steps"></ol>
+            <p>대상별 작업이 끝나면 결과를 합산합니다.</p>
+          </aside>
+          <section class="step-inspector">
+            <div class="inspector-tabs" role="tablist" aria-label="상세 정보">
+              <button
+                role="tab"
+                id="tab-execution"
+                aria-controls="view-execution"
+                aria-selected="true"
+                data-view="execution"
+              >
+                실행 결과</button
+              ><button
+                role="tab"
+                id="tab-evidence"
+                aria-controls="view-evidence"
+                aria-selected="false"
+                tabindex="-1"
+                data-view="evidence"
+              >
+                근거 <span id="evidence-count">0</span></button
+              ><button
+                role="tab"
+                id="tab-json"
+                aria-controls="view-json"
+                aria-selected="false"
+                tabindex="-1"
+                data-view="json"
+              >
+                계획 JSON</button
+              ><button
+                role="tab"
+                id="tab-trace"
+                aria-controls="view-trace"
+                aria-selected="false"
+                tabindex="-1"
+                data-view="trace"
+              >
+                이벤트 <span id="event-count">0</span>
+              </button>
+            </div>
+            <div
+              id="view-execution"
+              role="tabpanel"
+              aria-labelledby="tab-execution"
+            >
+              <div id="target-outcomes" class="target-outcomes"></div>
+              <div id="step-detail"></div>
+            </div>
+            <div
+              id="view-evidence"
+              role="tabpanel"
+              aria-labelledby="tab-evidence"
+              hidden
+            >
+              <div id="evidence"></div>
+            </div>
+            <div
+              id="view-json"
+              role="tabpanel"
+              aria-labelledby="tab-json"
+              hidden
+            >
+              <pre id="result-json"></pre>
+            </div>
+            <div
+              id="view-trace"
+              role="tabpanel"
+              aria-labelledby="tab-trace"
+              hidden
+            >
+              <div id="trace" class="trace" role="log" aria-live="polite"></div>
+            </div>
+          </section>
+        </div>
+        <div class="decision-footer">
+          <div id="approval" class="approval" hidden>
+            <div>
+              <strong
+                ><i data-icon="shield"></i>실행 전 검토가 필요합니다</strong
+              >
+              <p>대상·근거·시나리오를 확인하고 전체 계획을 한 번 승인하세요.</p>
+            </div>
+            <div class="approval-actions">
+              <button id="reject" class="secondary">거절</button
+              ><button id="approve" class="primary">
+                계획 승인<i data-icon="arrow"></i>
+              </button>
+            </div>
+          </div>
+          <div id="outcome" class="outcome" hidden></div>
+          <button id="cancel" class="secondary" hidden>남은 작업 취소</button>
+        </div>
+      </div>
+    </dialog>
     <div id="notice" class="notice" role="alert" hidden></div>
   </body>
 </html>

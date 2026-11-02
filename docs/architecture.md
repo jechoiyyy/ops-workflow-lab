@@ -14,7 +14,7 @@ The repository has one application engine, two input interfaces, and an entirely
 | `provider.py` | Return fictional inventory and simulated results; inject deterministic failures |
 | `server.py` | Local HTTP API, background worker, SSE replay, static UI |
 | `mcp_server.py` | Official SDK stdio interface for proposing and observing runs |
-| `static/` | Browser interface without a build step, CDN, fonts, or analytics |
+| `static/` | Korean dashboard and detail sheets; no build step, CDN or analytics; licensed fonts served locally |
 
 ## State transitions
 

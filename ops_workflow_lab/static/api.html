@@ -1,69 +1,70 @@
 <!doctype html>
-<html lang="en">
+<html lang="ko">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
-    <title>API · Ops Workflow Lab</title>
-    <link rel="icon" href="data:," />
+    <title>Ops Lab · API 문서</title>
     <link rel="stylesheet" href="/static/style.css" />
+    <link rel="stylesheet" href="/static/api.css" />
   </head>
   <body>
-    <div class="content">
-      <a href="/">← Workflow studio</a>
-      <h1>Local API reference</h1>
+    <article class="api-document">
+      <a href="/">← 대시보드로 돌아가기</a>
+      <h1>로컬 API 문서</h1>
       <p>
-        Single-user synthetic demo. All endpoints return JSON except the event
-        stream.
+        가상 대상의 계획 생성·승인·실행 기록을 조회하는 단일 사용자 데모
+        API입니다.
       </p>
-      <section class="panel">
-        <div class="panel-heading">
-          <h2>Endpoints</h2>
-          <a href="/openapi.json">OpenAPI schema ↗</a>
-        </div>
-        <div class="content">
-          <p><code>GET /api/health</code> — runtime mode and planner type.</p>
-          <p><code>GET /api/targets</code> — the three fictional servers.</p>
-          <p><code>GET /api/runs</code> — the 30 most recent runs.</p>
-          <p>
-            <code>POST /api/runs</code> — create a plan. Requires an
-            <code>Idempotency-Key</code> header.
-          </p>
-          <pre>{"goal": "Back up atlas-api", "failure": "transient"}</pre>
-          <p>
-            <code>GET /api/runs/{id}</code> — current state, exact plan hash,
-            and step results.
-          </p>
-          <p>
-            <code>POST /api/runs/{id}/decision</code> — bind a decision to the
-            reviewed plan.
-          </p>
-          <pre>
-{"plan_hash": "&lt;hash returned by the run&gt;", "decision": "approve"}</pre
-          >
-          <p>
-            Use <code>reject</code> to decline a pending plan. Decisions are
-            idempotent; contradictory decisions return 409. Use
-            <code>cancel</code> with the same plan hash to stop remaining work
-            in a nonterminal run. Completed receipts are retained.
-          </p>
-          <p>
-            <code>GET /api/runs/{id}/events?after=0</code> — durable event log.
-          </p>
-          <p>
-            <code>GET /api/runs/{id}/stream?after=0</code> — server-sent events.
-            Supports <code>Last-Event-ID</code>.
-          </p>
-          <p>
-            Failure scenarios: <code>none</code>, <code>transient</code>,
-            <code>persistent</code>, <code>verification</code>. Inventory
-            supports only <code>none</code>.
-          </p>
-          <p>
-            The API is bound to loopback by the CLI. It has no user accounts,
-            authorization roles, or production infrastructure adapters.
-          </p>
-        </div>
-      </section>
-    </div>
+      <h2>실행 계획 생성</h2>
+      <p>
+        <code>POST /api/runs</code> · 요청마다 고유한
+        <code>Idempotency-Key</code> 헤더가 필요합니다. 같은 키와 본문으로 다시
+        요청하면 저장된 실행을 반환합니다.
+      </p>
+      <pre>{"goal": "atlas-api 백업해줘", "failure": "none"}</pre>
+      <h2>승인·거절·취소</h2>
+      <p>
+        <code>POST /api/runs/{id}/decision</code> · 화면에서 확인한 계획의
+        해시를 전달합니다.
+      </p>
+      <pre>{"plan_hash": "실행 응답의 64자리 hash", "decision": "approve"}</pre>
+      <p>
+        <code>approve</code>는 승인, <code>reject</code>는 승인 대기 계획의
+        거절, <code>cancel</code>은 남은 작업의 취소입니다. 취소해도 이미 완료한
+        결과는 보존됩니다. 서로 모순되는 결정은 409 오류를 반환합니다.
+      </p>
+      <h2>상태와 이벤트 조회</h2>
+      <ul>
+        <li><code>GET /api/health</code> · 서버 모드와 설정된 모델</li>
+        <li><code>GET /api/targets</code> · 가상 대상 목록</li>
+        <li><code>GET /api/runs</code> · 최근 30개 실행</li>
+        <li><code>GET /api/runs/{id}</code> · 계획·단계·결과</li>
+        <li>
+          <code>GET /api/runs/{id}/events?after=0</code> · 순서 번호 이후의
+          이벤트
+        </li>
+        <li>
+          <code>GET /api/runs/{id}/stream?after=0</code> · SSE 실시간 이벤트와
+          종료 결과. <code>Last-Event-ID</code> 헤더로 재연결할 수 있습니다.
+        </li>
+      </ul>
+      <h2>시뮬레이션 시나리오</h2>
+      <p>
+        <code>none</code>: 정상 실행 · <code>transient</code>: 첫 시도 실패 ·
+        <code>persistent</code>: 재시도 한도 소진 · <code>verification</code>:
+        검증 실패. 다중 대상 계획에서는 첫 번째 대상에만 실패 시나리오를
+        적용합니다.
+      </p>
+      <h2>응답 형식</h2>
+      <p>
+        API 키, 상태 값, JSON은 기술적 호환성을 위해 영문 식별자를 유지합니다.
+        웹 화면에서는 한국어로 표시합니다. 전체 스키마는
+        <a href="/openapi.json">OpenAPI JSON</a>에서 확인할 수 있습니다.
+      </p>
+      <p>
+        모든 작업 결과는 합성 데이터입니다. 로컬 API는 사용자 인증을 제공하지
+        않습니다.
+      </p>
+    </article>
   </body>
 </html>

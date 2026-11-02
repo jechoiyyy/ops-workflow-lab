@@ -8,9 +8,9 @@ A runnable operations-agent portfolio demo: review a plan, approve simulated cha
 
 > Independent demonstration implementation. No company source code, product API contracts, internal runbooks, credentials, customer data, or original Git history are included.
 
-![Grounded workflow dashboard with retrieved evidence and human approval](docs/rag-dashboard.png)
+![Korean operations dashboard with local workflow metrics and execution history](docs/rag-dashboard.png)
 
-Shown: RAG mode with two fictional targets. The interface includes recent-run metrics, searchable status filters, cited evidence, execution inspection, theme switching and durable event replay. Earlier v0.1 screenshots remain as historical references.
+The Korean UI uses a desktop observability dashboard: grouped navigation, metric cards, measured run trends, target participation and a searchable execution table. New requests open in a modal; selecting a run opens a right-hand inspector with a step tree, cited evidence, plan JSON and events. Light and dark themes are included. Earlier v0.1 screenshots remain as historical references.
 
 ## Run locally
 
@@ -44,17 +44,17 @@ Try **“atlas-api 서버를 백업해 두고 싶어. 계획을 만들어줘.”
 uv run ops-lab --planner rag --model qwen3.8:27b-ctx32k --embedding-model bge-m3:latest
 ```
 
-Both model tags must already be installed. Try **“Back up atlas-api and lumen-db”**, select **Exhaust the retry budget**, then build the plan. Open **Evidence** to review the retrieved synthetic runbooks and cited controls. Approve once: the first target exhausts its retry budget, the second completes, and the final join reports `partial_failure`. Cancel stops remaining work while retaining completed receipts.
+Both model tags must already be installed. Try **“Back up atlas-api and lumen-db”**, select **재시도 한도 소진**, then build the plan. Open **근거** to review the retrieved synthetic runbooks and cited controls. Approve once: the first target exhausts its retry budget, the second completes, and the final join reports `partial_failure`. Cancel stops remaining work while retaining completed receipts.
 
 [Walkthrough, evaluation and limits](docs/grounded-workflows.md) · [Contribution narrative and reviewer guide](docs/case-study.md)
 
 ## Try a two-minute walkthrough
 
-1. Enter **Back up atlas-api** and select **Timeout once, then recover**.
+1. Enter **Back up atlas-api** and select **한 번 실패한 뒤 재시도 성공**.
 2. Build the execution plan. All tool attempts remain at zero while approval is pending.
 3. Review the target, scenario, and three planned steps, then approve.
 4. Watch the synthetic snapshot fail once, retry, and pass verification. Expand the JSON result to inspect the receipt.
-5. Create another plan and reject it, or choose **Exhaust the retry budget** to inspect a controlled failure.
+5. Create another plan and reject it, or choose **재시도 한도 소진** to inspect a controlled failure.
 
 | Example request | What happens |
 | --- | --- |
@@ -141,4 +141,4 @@ SQLite serializes the demo's immediate tool operations. The atomicity guarantees
 
 ## License
 
-MIT for this independently authored demo. Third-party packages retain their own licenses; none of their source trees are vendored here.
+MIT for this independently authored demo. Third-party packages retain their own licenses. Bundled Outfit and Noto Sans KR fonts use SIL OFL 1.1; see [asset sources and licenses](docs/third-party-assets.md).

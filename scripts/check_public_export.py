@@ -1,5 +1,6 @@
 """Check tracked release files only; emit locations, never candidate secret values."""
 
+import hashlib
 import re
 import subprocess
 import sys
@@ -16,6 +17,21 @@ ALLOWED_ROOT = {
 }
 ALLOWED_DIRS = {"ops_workflow_lab", "tests", "docs", "scripts", ".github", "evals"}
 ALLOWED_SUFFIXES = {".py", ".html", ".css", ".js", ".md", ".png", ".yml", ".json"}
+FONT_ASSETS = {
+    "ops_workflow_lab/static/fonts/outfit.woff2": (
+        "b3da8823c8782355a0c94f16b342adcf7caea58bff61ed67df8fc98eba6a3fc4"
+    ),
+    "ops_workflow_lab/static/fonts/outfit-OFL.txt": (
+        "e2a6bbb2589b85bac1690ec8f220b22a9c3af9bfda56df6391f7ab491c7a039f"
+    ),
+    "ops_workflow_lab/static/fonts/noto-sans-kr.woff2": (
+        "db38a1c453bebd3dfeae12c1b52928b4ccd0fff30d14990a019900c446281ac4"
+    ),
+    "ops_workflow_lab/static/fonts/notosanskr-OFL.txt": (
+        "babcfe66c8a098b2fa279bc724a3a342f8124f77ce18941fbcc1bbb39823cded"
+    ),
+}
+
 PATTERNS = {
     "private-network address": re.compile(
         r"\b(?:10(?:\.\d{1,3}){3}|192\.168(?:\.\d{1,3}){2}|"
@@ -39,8 +55,10 @@ def main():
         path = Path(name)
         full = ROOT / path
         checked += 1
-        if name not in ALLOWED_ROOT and (
-            path.parts[0] not in ALLOWED_DIRS or path.suffix not in ALLOWED_SUFFIXES
+        if (
+            name not in ALLOWED_ROOT
+            and name not in FONT_ASSETS
+            and (path.parts[0] not in ALLOWED_DIRS or path.suffix not in ALLOWED_SUFFIXES)
         ):
             errors.append(f"{name}: outside release allowlist")
         if full.is_symlink():
@@ -51,6 +69,10 @@ def main():
             continue
         if full.stat().st_size > 2_000_000:
             errors.append(f"{name}: file exceeds release size limit")
+        if name in FONT_ASSETS:
+            if hashlib.sha256(full.read_bytes()).hexdigest() != FONT_ASSETS[name]:
+                errors.append(f"{name}: font asset differs from reviewed release hash")
+            continue
         if path.suffix == ".png":
             if not full.read_bytes().startswith(b"\x89PNG\r\n\x1a\n"):
                 errors.append(f"{name}: invalid PNG signature")

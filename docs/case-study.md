@@ -30,8 +30,8 @@ Dense **tool** discovery in the private project and **runbook** retrieval in thi
 ## Five-minute review
 
 1. Run the [grounded demo](grounded-workflows.md) with local models, or run `uv run ops-lab` for the deterministic baseline.
-2. Propose `Back up atlas-api and lumen-db` in RAG mode. Open **Evidence**, follow a control's source link and inspect the node trace. Before approval, every execution attempt is zero.
-3. Repeat with **Exhaust the retry budget**. Approve once; compare `atlas-api` failure with `lumen-db` success and inspect the join result.
+2. Propose `Back up atlas-api and lumen-db` in RAG mode. Open **근거**, follow a control's source link and inspect the node trace. Before approval, every execution attempt is zero.
+3. Repeat with **재시도 한도 소진**. Approve once; compare `atlas-api` failure with `lumen-db` success and inspect the join result.
 4. Run `uv run pytest -q`. Read `tests/test_grounded.py` for fabricated citations, missing evidence, repair limits, dropped targets, restart and cancellation.
 5. Inspect the [live model smoke report](evaluation-grounded.json) and its [limitations](grounded-workflows.md#evaluation). The results are reproducible with installed models; tests use deterministic doubles for inference.
 

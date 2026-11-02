@@ -40,11 +40,13 @@ The original corpus has eight documents including a retired distractor. Action, 
 
 ## Dashboard walkthrough
 
+The interface is Korean. Use **새 워크플로** to open the request modal; select a table row to open the right-side inspector. The left step tree selects the tool result shown in **실행 결과**.
+
 - Metrics and the searchable/filterable table use the latest 30 real local demo runs. Empty data stays empty; there are no invented traffic, cost or production metrics.
-- **Execution** shows target outcomes, dependency IDs, attempts and the final join.
-- **Evidence** links every selected control to the retrieved synthetic source and shows generation/validation records. Scores are cosine similarities, not confidence probabilities.
-- **Plan JSON** exposes the full artifact, hash, corpus identity and recorded step results.
-- **Approve** releases the whole plan once. **Reject** executes no steps. **Cancel remaining work** preserves already committed receipts and skips remaining work; it does not roll back completed operations.
+- **실행 결과** shows target outcomes, dependency IDs, attempts and the final join.
+- **근거** links every selected control to the retrieved synthetic source and shows generation/validation records. Scores are cosine similarities, not confidence probabilities.
+- **계획 JSON** exposes the full artifact, hash, corpus identity and recorded step results.
+- **계획 승인** releases the whole plan once. **거절** executes no steps. **남은 작업 취소** preserves already committed receipts and skips remaining work; it does not roll back completed operations.
 - A non-success simulation affects the **first named target only**. Other targets continue and the final status can be `partial_failure`.
 
 Planning records appear after the full proposal completes. They are not token streaming or resumable planning checkpoints. The execution timeline is persisted and replayable. A process interruption during planning requires a new planning attempt; an interruption after persistence resumes the execution state.

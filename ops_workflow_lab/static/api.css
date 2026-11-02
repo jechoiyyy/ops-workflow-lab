@@ -1,0 +1,27 @@
+.api-document {
+  max-width: 860px;
+  padding: 40px 24px;
+  margin: auto;
+}
+.api-document h1 {
+  font-size: 28px;
+  margin: 24px 0 16px;
+}
+.api-document h2 {
+  margin: 30px 0 12px;
+}
+.api-document p,
+.api-document li {
+  line-height: 1.9;
+  margin: 12px 0;
+}
+.api-document a {
+  color: var(--success);
+  text-decoration: underline;
+}
+.api-document code {
+  overflow-wrap: anywhere;
+}
+.api-document pre {
+  margin: 16px 0;
+}
