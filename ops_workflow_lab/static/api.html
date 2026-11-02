@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>API · Ops Workflow Lab</title>
+    <link rel="icon" href="data:," />
+    <link rel="stylesheet" href="/static/style.css" />
+  </head>
+  <body>
+    <div class="content">
+      <a href="/">← Workflow studio</a>
+      <h1>Local API reference</h1>
+      <p>
+        Single-user synthetic demo. All endpoints return JSON except the event
+        stream.
+      </p>
+      <section class="panel">
+        <div class="panel-heading">
+          <h2>Endpoints</h2>
+          <a href="/openapi.json">OpenAPI schema ↗</a>
+        </div>
+        <div class="content">
+          <p><code>GET /api/health</code> — runtime mode and planner type.</p>
+          <p><code>GET /api/targets</code> — the three fictional servers.</p>
+          <p><code>GET /api/runs</code> — the 30 most recent runs.</p>
+          <p>
+            <code>POST /api/runs</code> — create a plan. Requires an
+            <code>Idempotency-Key</code> header.
+          </p>
+          <pre>{"goal": "Back up atlas-api", "failure": "transient"}</pre>
+          <p>
+            <code>GET /api/runs/{id}</code> — current state, exact plan hash,
+            and step results.
+          </p>
+          <p>
+            <code>POST /api/runs/{id}/decision</code> — bind a decision to the
+            reviewed plan.
+          </p>
+          <pre>
+{"plan_hash": "&lt;hash returned by the run&gt;", "decision": "approve"}</pre
+          >
+          <p>
+            Use <code>reject</code> to decline a pending plan. Decisions are
+            idempotent; contradictory decisions return 409.
+          </p>
+          <p>
+            <code>GET /api/runs/{id}/events?after=0</code> — durable event log.
+          </p>
+          <p>
+            <code>GET /api/runs/{id}/stream?after=0</code> — server-sent events.
+            Supports <code>Last-Event-ID</code>.
+          </p>
+          <p>
+            Failure scenarios: <code>none</code>, <code>transient</code>,
+            <code>persistent</code>, <code>verification</code>. Inventory
+            supports only <code>none</code>.
+          </p>
+          <p>
+            The API is bound to loopback by the CLI. It has no user accounts,
+            authorization roles, or production infrastructure adapters.
+          </p>
+        </div>
+      </section>
+    </div>
+  </body>
+</html>

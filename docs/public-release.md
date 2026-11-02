@@ -1,0 +1,30 @@
+# Public-release scope
+
+This is an independently authored demonstration of generic workflow patterns. Its source was written in a separate directory; source files and Git metadata from the reference project were not copied.
+
+## Included
+
+- A new deterministic planner and approval/execution state machine.
+- A newly defined SQLite schema and transactional event log.
+- Fictional inventory and synthetic failure scenarios.
+- A new browser UI and local API.
+- A stdio integration using the official MCP SDK.
+- Tests, architecture notes, and screenshots generated from the synthetic demo.
+
+## Excluded
+
+- Company-specific implementation, internal API paths, tool contracts, or workflow policies.
+- Credentials, internal hosts, deployment manifests, and production environment files.
+- Operational logs, database dumps, classifier training data, and internal knowledge corpora.
+- Customer data, original screenshots, presentations, and sales documents.
+- Original repository commits, branches, tags, remotes, and author metadata.
+
+## Release checks
+
+`scripts/check_public_export.py` inspects the tracked release files. It restricts file paths and extensions, rejects common secret-bearing artifact types and private-network addresses, and checks for credential-shaped content. It is an additional guard, not a proof that arbitrary files are safe to publish.
+
+Before the initial release, the tracked files and fresh Git history are also inspected with Gitleaks. Runtime databases, virtual environments, test outputs, and logs stay outside the export. Dependency lockfile hashes and deliberately fictional test inputs are expected public content.
+
+Screenshots must show only the synthetic application viewport. Browser profiles, bookmarks, other tabs, desktop content, and original product screens are excluded.
+
+Future changes should preserve this boundary. A real integration belongs in a separately reviewed private implementation; adding one here would require a new disclosure review.

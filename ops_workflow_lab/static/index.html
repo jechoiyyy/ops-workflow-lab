@@ -1,0 +1,221 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <meta
+      name="description"
+      content="An interactive, local demonstration of approval-gated operations workflows."
+    />
+    <title>Ops Workflow Lab</title>
+    <link rel="icon" href="data:," />
+    <link rel="stylesheet" href="/static/style.css" />
+    <script src="/static/app.js" defer></script>
+  </head>
+  <body>
+    <aside class="sidebar">
+      <a class="brand" href="/" aria-label="Ops Workflow Lab home"
+        ><span class="brand-mark">o<span>↗</span></span
+        ><span>ops<span class="brand-light"> / lab</span></span></a
+      >
+      <div class="sidebar-section">WORKSPACE</div>
+      <div class="nav-current">
+        <span>◈</span> Workflow studio <span class="nav-count">01</span>
+      </div>
+      <div class="sidebar-section history-label">
+        RECENT RUNS
+        <button id="refresh" aria-label="Refresh recent runs">↻</button>
+      </div>
+      <div id="history" class="history">
+        <p class="quiet">Your runs will appear here.</p>
+      </div>
+      <div class="sidebar-foot">
+        <span class="status-dot"></span> LOCAL SANDBOX<br /><span
+          >Fictional targets. Real workflow state.</span
+        >
+      </div>
+    </aside>
+    <main>
+      <header class="topbar">
+        <span>Workspace <span class="breadcrumb">/</span> Workflow studio</span
+        ><span class="local-pill"
+          ><span class="status-dot"></span> Synthetic environment</span
+        >
+      </header>
+      <div class="content">
+        <div class="eyebrow">OPERATIONS, WITH INTENT</div>
+        <div class="hero">
+          <div>
+            <h1>From request to<br /><span>verified result.</span></h1>
+            <p>
+              Plan an operation. Review its scope.<br />Follow the decisions,
+              retries, and evidence.
+            </p>
+          </div>
+          <div class="hero-note">
+            <span class="note-number">03</span
+            ><span>fictional targets<br />zero cloud credentials</span>
+          </div>
+        </div>
+        <div class="metrics">
+          <div>
+            <span class="metric-icon">⌘</span
+            ><span
+              >Deterministic planner<small
+                >Explicit commands, predictable plans</small
+              ></span
+            >
+          </div>
+          <div>
+            <span class="metric-icon">◇</span
+            ><span
+              >Human approval<small
+                >Every simulated change is reviewed</small
+              ></span
+            >
+          </div>
+          <div>
+            <span class="metric-icon">≋</span
+            ><span
+              >Durable event trace<small
+                >Replay the complete execution</small
+              ></span
+            >
+          </div>
+        </div>
+        <div class="workspace-grid">
+          <section class="panel composer">
+            <div class="panel-heading">
+              <div>
+                <span class="section-index">01</span>
+                <h2>Compose a request</h2>
+              </div>
+              <span class="tag">RULE-BASED</span>
+            </div>
+            <form id="request-form">
+              <label for="goal">What would you like to do?</label>
+              <textarea
+                id="goal"
+                maxlength="180"
+                rows="3"
+                required
+                spellcheck="false"
+              >
+Back up atlas-api</textarea
+              >
+              <div class="presets">
+                <button type="button" data-goal="Show inventory">
+                  View inventory ↗</button
+                ><button
+                  type="button"
+                  data-goal="Rehearse recovery for lumen-db"
+                >
+                  Rehearse recovery ↗</button
+                ><button type="button" data-goal="Back up atlas-api">
+                  Back up a server ↗
+                </button>
+              </div>
+              <div class="scenario-row">
+                <label for="failure">Simulation scenario</label
+                ><select id="failure">
+                  <option value="none">Successful execution</option>
+                  <option value="transient">Timeout once, then recover</option>
+                  <option value="persistent">Exhaust the retry budget</option>
+                  <option value="verification">Fail the integrity check</option>
+                </select>
+              </div>
+              <button class="primary" type="submit" id="create">
+                Build execution plan <span>→</span>
+              </button>
+              <p class="form-note">
+                Supports the example commands above and their Korean
+                equivalents. No LLM or cloud calls.
+              </p>
+            </form>
+            <div class="inventory-heading">
+              <span>SYNTHETIC INVENTORY</span><span>3 targets</span>
+            </div>
+            <div id="targets"></div>
+          </section>
+          <section class="panel execution">
+            <div class="panel-heading">
+              <div>
+                <span class="section-index">02</span>
+                <h2>Review & execute</h2>
+              </div>
+              <span id="run-status" class="badge idle">READY</span>
+            </div>
+            <div id="empty-state" class="empty-state">
+              <div class="empty-symbol">◇</div>
+              <h3>A clear plan before any change.</h3>
+              <p>
+                Build a plan to see the exact target, steps,<br />and approval
+                decision.
+              </p>
+              <div class="mini-flow">
+                <span>Plan</span><i>→</i><span>Approve</span><i>→</i
+                ><span>Verify</span>
+              </div>
+            </div>
+            <div id="run-detail" hidden>
+              <div class="run-meta">
+                <div>
+                  <span class="small-label">TARGET</span
+                  ><strong id="run-target"></strong>
+                </div>
+                <div>
+                  <span class="small-label">RUN ID</span
+                  ><code id="run-id"></code>
+                </div>
+              </div>
+              <p id="run-scenario" class="form-note"></p>
+              <ol id="steps" class="steps"></ol>
+              <div id="approval" class="approval" hidden>
+                <div class="approval-title">◇ Your review is required</div>
+                <p>
+                  This plan only creates simulated resources. Review the steps
+                  and scenario before approving.
+                </p>
+                <div class="approval-actions">
+                  <button id="approve" class="primary">
+                    Approve plan <span>→</span></button
+                  ><button id="reject" class="secondary">Reject</button>
+                </div>
+              </div>
+              <div id="outcome" class="outcome" hidden></div>
+              <details class="result-details">
+                <summary>Inspect plan & result JSON</summary>
+                <pre id="result-json"></pre>
+              </details>
+            </div>
+          </section>
+        </div>
+        <section class="panel trace-panel">
+          <div class="panel-heading">
+            <div>
+              <span class="section-index">03</span>
+              <h2>Execution trace</h2>
+              <span id="event-count" class="tag">0 EVENTS</span>
+            </div>
+            <span class="trace-caption"
+              ><span class="status-dot"></span> Persisted · replayable</span
+            >
+          </div>
+          <div id="trace" class="trace" role="log" aria-live="polite">
+            <div class="trace-placeholder">
+              Every approval, tool attempt, and verification result will appear
+              here.
+            </div>
+          </div>
+        </section>
+        <footer>
+          <span
+            >OPS WORKFLOW LAB <span class="footer-divider">/</span> An
+            independent portfolio demonstration</span
+          ><a href="/docs">Explore the API ↗</a>
+        </footer>
+      </div>
+    </main>
+    <div id="notice" class="notice" role="alert" hidden></div>
+  </body>
+</html>
